@@ -3,8 +3,8 @@
     <h2>{{ 'login-page.title' | translate }}</h2>
 
     <mat-form-field appearance="outline" class="full-width">
-      <mat-label>{{ 'login-page.form.username' | translate }}</mat-label>
-      <input matInput [(ngModel)]="username" name="username" required />
+      <mat-label>{{ 'login-page.form.email' | translate }}</mat-label>
+      <input matInput type="email" [(ngModel)]="email" name="email" required />
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
@@ -15,6 +15,12 @@
     <div class="submit-container">
       <button mat-raised-button color="primary" type="submit">
         {{ 'login-page.form.submit' | translate }}
+      </button>
+    </div>
+
+    <div class="external-login">
+      <button mat-stroked-button color="accent" type="button" (click)="onGoogleLogin()">
+        {{ 'login-page.form.google' | translate }}
       </button>
     </div>
 

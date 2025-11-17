@@ -24,14 +24,19 @@ import {RouterLink} from '@angular/router';
   styleUrl: './login-form.component.css'
 })
 export class LoginFormComponent {
-  username = '';
+  email = '';
   password = '';
 
-  @Output() submitted = new EventEmitter<{ username: string; password: string }>();
+  @Output() submitted = new EventEmitter<{ email: string; password: string }>();
+  @Output() googleLogin = new EventEmitter<void>();
 
   submitForm() {
-    if (this.username && this.password) {
-      this.submitted.emit({ username: this.username, password: this.password });
+    if (this.email && this.password) {
+      this.submitted.emit({ email: this.email, password: this.password });
     }
+  }
+
+  onGoogleLogin() {
+    this.googleLogin.emit();
   }
 }

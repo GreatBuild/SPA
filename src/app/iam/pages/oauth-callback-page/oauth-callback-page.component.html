@@ -1,0 +1,18 @@
+<section class="oauth-callback-page">
+  <div class="callback-container">
+    <div *ngIf="!hasError; else errorBlock" class="loading-state">
+      <mat-spinner></mat-spinner>
+      <p>{{ 'oauth-callback.processing' | translate }}</p>
+    </div>
+
+    <ng-template #errorBlock>
+      <div class="error-state">
+        <h2>{{ 'oauth-callback.errors.title' | translate }}</h2>
+        <p>{{ message }}</p>
+        <button mat-raised-button color="primary" routerLink="/login">
+          {{ 'oauth-callback.errors.back-to-login' | translate }}
+        </button>
+      </div>
+    </ng-template>
+  </div>
+</section>

@@ -23,6 +23,14 @@ export const routes: Routes = [
     path: 'register',
     loadComponent: () => import('./iam/pages/register-page/register-page.component').then(m => m.RegisterPageComponent)
   },
+  {
+    path: 'auth/select-role',
+    loadComponent: () => import('./iam/pages/select-role-page/select-role-page.component').then(m => m.SelectRolePageComponent)
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () => import('./iam/pages/oauth-callback-page/oauth-callback-page.component').then(m => m.OauthCallbackPageComponent)
+  },
 
   // Views for Worker
   {

@@ -1,0 +1,40 @@
+<section class="select-role-page">
+  <mat-card class="select-role-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'auth-select-role.title' | translate }}</mat-card-title>
+      <mat-card-subtitle *ngIf="email()">{{ email() }}</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <p class="helper" *ngIf="infoMessage()">{{ infoMessage() }}</p>
+
+      <div *ngIf="!tokenMissing(); else tokenError">
+        <mat-radio-group [(ngModel)]="selectedRole" class="role-options">
+          <mat-radio-button
+            *ngFor="let role of roles"
+            [value]="role.value"
+          >
+            {{ role.labelKey | translate }}
+          </mat-radio-button>
+        </mat-radio-group>
+
+        <div class="actions">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="submitSelection()"
+            [disabled]="isSubmitting()"
+          >
+            {{ 'auth-select-role.submit' | translate }}
+          </button>
+        </div>
+      </div>
+
+      <ng-template #tokenError>
+        <p class="error">{{ errorMessage() }}</p>
+      </ng-template>
+
+      <p class="error" *ngIf="errorMessage() && !tokenMissing()">{{ errorMessage() }}</p>
+    </mat-card-content>
+  </mat-card>
+</section>

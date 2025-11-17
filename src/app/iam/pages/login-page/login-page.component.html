@@ -1,6 +1,6 @@
 <!-- login-page.component.html -->
 <section class="login-page">
-  <app-login-form (submitted)="onLoginSubmitted($event)" />
+  <app-login-form (submitted)="onLoginSubmitted($event)" (googleLogin)="onGoogleLogin()" />
 
   @if (errorMessage) {
     <div class="error">{{ errorMessage }}</div>

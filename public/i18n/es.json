@@ -192,14 +192,39 @@
     "title": "Iniciar sesión",
     "form": {
       "username": "Nombre de usuario",
+      "email": "Correo electrónico",
       "password": "Contraseña",
       "submit": "Entrar",
+      "google": "Ingresar con Google",
       "no-account": "¿No tienes una cuenta?",
       "register-link": "Regístrate aquí"
     },
     "errors": {
       "invalid-credentials": "Usuario o contraseña incorrectos.",
       "server": "No se pudo conectar con el servidor. Intenta nuevamente."
+    }
+  },
+  "auth-select-role": {
+    "title": "Selecciona tu rol",
+    "helper": "Elige cómo usarás la plataforma para completar el registro.",
+    "roles": {
+      "client": "Cliente",
+      "worker": "Profesional"
+    },
+    "submit": "Continuar",
+    "errors": {
+      "missing-token": "No pudimos validar tu sesión de Google. Intenta iniciar sesión nuevamente.",
+      "select-role": "Selecciona un rol para continuar.",
+      "submit": "No se pudo guardar tu rol."
+    }
+  },
+  "oauth-callback": {
+    "processing": "Procesando tu inicio de sesión...",
+    "errors": {
+      "title": "Error de Autenticación",
+      "no-token": "No se recibió token de autenticación. Por favor intenta nuevamente.",
+      "invalid-role": "No se pudo determinar tu rol. Por favor contacta a soporte.",
+      "back-to-login": "Volver al inicio de sesión"
     }
   },
   "organization-card": {

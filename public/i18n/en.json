@@ -195,14 +195,39 @@
     "title": "Login",
     "form": {
       "username": "Username",
+      "email": "Email",
       "password": "Password",
       "submit": "Sign in",
+      "google": "Sign in with Google",
       "no-account": "Don't have an account?",
       "register-link": "Register here"
     },
     "errors": {
       "invalid-credentials": "Incorrect username or password.",
       "server": "Unable to connect to the server. Please try again."
+    }
+  },
+  "auth-select-role": {
+    "title": "Choose your role",
+    "helper": "Tell us how you'll use the platform to finish the setup.",
+    "roles": {
+      "client": "Client",
+      "worker": "Worker"
+    },
+    "submit": "Continue",
+    "errors": {
+      "missing-token": "We couldn't validate your Google session. Please try signing in again.",
+      "select-role": "Select a role to continue.",
+      "submit": "Unable to save your role."
+    }
+  },
+  "oauth-callback": {
+    "processing": "Processing your login...",
+    "errors": {
+      "title": "Authentication Error",
+      "no-token": "No authentication token received. Please try again.",
+      "invalid-role": "Unable to determine your role. Please contact support.",
+      "back-to-login": "Back to Login"
     }
   },
   "organization-card": {

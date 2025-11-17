@@ -7,7 +7,6 @@ import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 
 import { UserType } from '../../model/user-type.vo';
-import { AccountStatus } from '../../model/account-status.vo';
 import {NgForOf} from '@angular/common';
 import {TranslatePipe} from '@ngx-translate/core';
 
@@ -19,25 +18,19 @@ import {TranslatePipe} from '@ngx-translate/core';
   styleUrl: './register-form.component.css'
 })
 export class RegisterFormComponent {
-  roles = Object.values(UserType); // ['TYPE_CLIENT', 'ORGANIZATION_USER', ...]
+  roles = Object.values(UserType); // ['TYPE_CLIENT', 'TYPE_WORKER', ...]
   firstName = '';
   lastName = '';
   email = '';
-  phone = '';
-  username = '';
   password = '';
   role: UserType = UserType.TYPE_CLIENT;
-  status: AccountStatus = AccountStatus.ACTIVE;
 
   @Output() submitted = new EventEmitter<{
     firstName: string;
     lastName: string;
     email: string;
-    phone: string;
-    username: string;
     password: string;
     role: UserType;
-    status: AccountStatus;
   }>();
 
   submitForm() {
@@ -45,11 +38,8 @@ export class RegisterFormComponent {
       firstName: this.firstName,
       lastName: this.lastName,
       email: this.email,
-      phone: this.phone,
-      username: this.username,
       password: this.password,
-      role: this.role,
-      status: this.status
+      role: this.role
     });
   }
 }
