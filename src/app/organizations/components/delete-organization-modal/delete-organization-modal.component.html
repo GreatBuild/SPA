@@ -1,10 +1,10 @@
-<form (ngSubmit)="onDelete()">
-  <mat-form-field appearance="fill" class="full-width">
-    <mat-label>RUC de la organización</mat-label>
-    <input matInput [(ngModel)]="ruc" name="ruc" placeholder="Ingrese el RUC" maxlength="11" required />
-    <mat-error *ngIf="ruc && !isFormValid">El RUC debe tener 11 dígitos numéricos</mat-error>
-  </mat-form-field>
-  <button mat-raised-button color="warn" [disabled]="!isFormValid" type="submit">
-    Eliminar
-  </button>
-</form>
+<h2 mat-dialog-title>{{ 'delete-organization-modal.title' | translate }}</h2>
+<mat-dialog-content>
+  <p>{{ 'delete-organization-modal.message' | translate }}</p>
+  <p class="organization-name"><strong>{{ data.organizationName }}</strong></p>
+  <p class="warning-text">{{ 'delete-organization-modal.warning' | translate }}</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">{{ 'delete-organization-modal.cancel' | translate }}</button>
+  <button mat-raised-button color="warn" (click)="onConfirm()">{{ 'delete-organization-modal.confirm' | translate }}</button>
+</mat-dialog-actions>

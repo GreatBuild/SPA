@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
 import { createDynamicService } from '../../shared/services/create-dynamic-service';
 import { createEndpointConfig } from '../../shared/model/endpoint-config.vo';
 import { HttpMethod } from '../../shared/model/http-method.vo';
@@ -28,4 +30,22 @@ export class UserAccountService {
   delete = this.service['delete'];
   signIn = this.service['signIn'];
   signUp = this.service['signUp'];
+
+  private readonly apiBaseUrl = environment.propgmsApiBaseUrl || 'http://localhost:8080/api/';
+
+  constructor(private http: HttpClient) {}
+
+  /**
+   * Obtiene información interna de un usuario por su ID
+   * @param id ID del usuario
+   * @returns Observable con los datos del usuario interno
+   */
+  getUserInternalById(id: number): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    });
+
+    return this.http.get(`${this.apiBaseUrl}users/internal/${id}`, { headers });
+  }
 }

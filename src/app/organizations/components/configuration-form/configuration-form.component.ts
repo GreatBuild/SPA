@@ -15,10 +15,22 @@ import {TranslatePipe} from "@ngx-translate/core";
 export class ConfigurationFormComponent {
   @Input() organization!: Organization;
 
-  getUpdatedOrganization(): Partial<Organization> {
+  get rucValue(): string {
+    return typeof this.organization.ruc === 'string'
+      ? this.organization.ruc
+      : this.organization.ruc?.value || '';
+  }
+
+  set rucValue(value: string) {
+    // Actualizar el ruc como string temporal para el binding
+    (this.organization as any).ruc = value;
+  }
+
+  getUpdatedOrganization(): { legalName: string; commercialName: string; ruc: string } {
     return {
       legalName: this.organization.legalName,
-      commercialName: this.organization.commercialName
+      commercialName: this.organization.commercialName,
+      ruc: this.rucValue
     };
   }
 }

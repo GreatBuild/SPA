@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  propgmsApiBaseUrl: 'http://localhost:8080/api/v1',
+  propgmsApiBaseUrl: 'http://localhost:8080/api/',
   authApiBaseUrl: 'http://localhost:8080/api/auth',
   oauthApiBaseUrl: 'http://localhost:8003/api/auth',
   oauthGatewayUrl: 'http://localhost:8080/oauth2/authorization/google',

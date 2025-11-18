@@ -9,3 +9,43 @@
 .organization-card:hover {
   transform: scale(1.02);
 }
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.title-section {
+  flex: 1;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.role-badge.contractor {
+  background-color: #ffd700;
+  color: #333;
+}
+
+.role-badge.member {
+  background-color: #4caf50;
+  color: white;
+}
+
+mat-card-content p {
+  margin: 8px 0;
+}
+
+mat-card-content strong {
+  color: rgba(0, 0, 0, 0.6);
+}

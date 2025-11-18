@@ -37,24 +37,20 @@ import {Person} from '../../../iam/model/person.entity';
 export class InvitationListComponent implements OnInit {
 
   invitations = signal<OrganizationInvitation[]>([]);
+  filteredInvitations = signal<OrganizationInvitation[]>([]);
   loading = signal<boolean>(false);
-  processingInvitation = signal<string | null>(null);
-  organizationNames = signal<Record<string, string>>({});
-  personNames = signal<Record<string, string>>({});
-
+  processingInvitation = signal<number | null>(null);
+  selectedFilter = signal<InvitationStatus | 'ALL'>('ALL');
 
   invitationStatus = InvitationStatus;
-  displayedColumns: string[] = ['organization', 'invitedBy', 'invitedAt', 'status', 'actions'];
+  displayedColumns: string[] = ['organization', 'invitedBy', 'invitedAt', 'expiresAt', 'status', 'actions'];
 
 
   constructor(
     private invitationService: OrganizationInvitationService,
     private snackBar: MatSnackBar,
     private sessionService: SessionService,
-    private organizationMemberService: OrganizationMemberService,
-    private organizationService: OrganizationService,
-    private personService: PersonService
-
+    private organizationMemberService: OrganizationMemberService
   ) {
   }
 
@@ -64,92 +60,97 @@ export class InvitationListComponent implements OnInit {
 
   loadInvitations() {
     this.loading.set(true);
-    try {
-      const currentPersonId = this.sessionService.getPersonId();
+    
+    // Usar el nuevo endpoint my-invitations
+    this.invitationService.getMyInvitations({}).subscribe({
+      next: (response: any[]) => {
+        console.log('[My Invitations API Response]', response);
 
-      if (!currentPersonId) {
-        console.warn('No person ID found in session');
-        this.invitations.set([]);
-        this.showSnackBar('Could not get user information', 'error');
+        const mappedInvitations = response
+          .map(data => new OrganizationInvitation({
+            id: data.id,
+            organizationId: data.organizationId,
+            organizationName: data.organizationName,
+            inviterId: data.inviterId,
+            inviterName: data.inviterName,
+            inviteeUserId: data.inviteeUserId,
+            inviteeEmail: data.inviteeEmail,
+            status: data.status as InvitationStatus,
+            createdAt: data.createdAt,
+            invitedAt: data.createdAt, // Usar createdAt como invitedAt
+            expiresAt: data.expiresAt
+          }))
+          .sort((a, b) => {
+            // Ordenar por fecha descendente (más recientes primero)
+            const dateA = a.createdAt || a.invitedAt;
+            const dateB = b.createdAt || b.invitedAt;
+            return dateB.getTime() - dateA.getTime();
+          });
+
+        this.invitations.set(mappedInvitations);
+        this.applyFilter();
         this.loading.set(false);
-        return;
+      },
+      error: (error: any) => {
+        console.error('Error loading invitations:', error);
+        const errorMessage = error.status === 401 
+          ? 'No autorizado. Por favor, inicia sesión nuevamente.'
+          : 'Error al cargar las invitaciones';
+        this.showSnackBar(errorMessage, 'error');
+        this.invitations.set([]);
+        this.filteredInvitations.set([]);
+        this.loading.set(false);
       }
+    });
+  }
 
-      this.invitationService.getByPersonId({}, { personId: currentPersonId }).subscribe({
-        next: (invitations: any[]) => {
-          console.log('[Invitations API Response]', invitations); // <-- Aquí el log
-
-          const mappedInvitations = invitations
-            .map(data => this.mapToInvitation(data))
-            .filter(inv => inv !== null);
-
-          this.invitations.set(mappedInvitations);
-          this.loading.set(false);
-        },
-        error: (error: any) => {
-          console.error('Error loading invitations:', error);
-          this.showSnackBar('Error loading Invitations', 'error');
-          this.invitations.set([]);
-          this.loading.set(false);
-        }
-      });
-
-    } catch (error) {
-      console.error('Error loading Invitations:', error);
-      this.showSnackBar('Error loading Invitations', 'error');
-      this.invitations.set([]);
-      this.loading.set(false);
+  applyFilter() {
+    const filter = this.selectedFilter();
+    if (filter === 'ALL') {
+      this.filteredInvitations.set(this.invitations());
+    } else {
+      this.filteredInvitations.set(
+        this.invitations().filter(inv => inv.status === filter)
+      );
     }
   }
 
+  setFilter(status: InvitationStatus | 'ALL') {
+    this.selectedFilter.set(status);
+    this.applyFilter();
+  }
+
   async acceptInvitation(invitation: OrganizationInvitation): Promise<void> {
-    const id = invitation.invitationId?.toString() ?? '';
-    this.processingInvitation.set(id);
+    const id = invitation.id?.toString() ?? '';
+    this.processingInvitation.set(invitation.id ?? null);
+    
     try {
-      const person: Person = await this.personService.getById({}, { id: invitation.personId }).toPromise();
-
-      const newMember = {
-        personId: invitation.personId,
-        organizationId: invitation.organizationId,
-        memberType: 'WORKER',
-        joinedAt: new Date(),
-        firstName: person.firstName,
-        lastName: person.lastName,
-        email: person.email
-      };
-
-      await this.organizationMemberService.create(newMember).toPromise();
-
-      await this.invitationService.delete({}, { id }).toPromise();
-
-      invitation.accept();
-      this.showSnackBar('¡Accepted invitation!', 'success');
+      // Usar el nuevo endpoint POST /api/invitations/{id}/accept
+      await this.invitationService.accept({}, { id }).toPromise();
+      
+      this.showSnackBar('✅ Invitación aceptada exitosamente', 'success');
       await this.loadInvitations();
     } catch (error) {
       console.error('Error accepting invitation:', error);
-      this.showSnackBar('Error accepting invitation', 'error');
+      this.showSnackBar('❌ Error al aceptar la invitación', 'error');
     } finally {
       this.processingInvitation.set(null);
     }
   }
 
   async rejectInvitation(invitation: OrganizationInvitation): Promise<void> {
-    const id = invitation.invitationId?.toString() ?? '';
-    this.processingInvitation.set(id);
+    const id = invitation.id?.toString() ?? '';
+    this.processingInvitation.set(invitation.id ?? null);
+    
     try {
-      await this.invitationService.update(
-        {status: 'REJECTED'},
-        {id}
-      ).toPromise();
-
-      await this.invitationService.delete({}, {id}).toPromise();
-
-      invitation.reject();
-      this.showSnackBar('Rejected invitation', 'info');
+      // Usar el nuevo endpoint POST /api/invitations/{id}/reject
+      await this.invitationService.reject({}, { id }).toPromise();
+      
+      this.showSnackBar('📋 Invitación rechazada', 'info');
       await this.loadInvitations();
     } catch (error) {
       console.error('Error rejecting invitation:', error);
-      this.showSnackBar('Error rejecting invitation', 'error');
+      this.showSnackBar('❌ Error al rechazar la invitación', 'error');
     } finally {
       this.processingInvitation.set(null);
     }
@@ -162,57 +163,19 @@ export class InvitationListComponent implements OnInit {
     });
   }
 
-  private mapToInvitation(data: any): OrganizationInvitation | null {
-    const invitationId = data.id;
-
-    return new OrganizationInvitation({
-      invitationId: invitationId,
-      organizationId: data.organizationId,
-      personId: data.personId,
-      invitedBy: data.invitedBy,
-      invitedAt: data.invitedAt ? new Date(data.invitedAt) : new Date(),
-      acceptedAt: data.acceptedAt ? new Date(data.acceptedAt) : undefined,
-      status: data.status || InvitationStatus.PENDING
-    });
-  }
-
-  getOrganizationName(id: string): string {
-    if (!id) return 'Organización desconocida';
-
-    const cachedName = this.organizationNames()[id];
-    if (cachedName) return cachedName;
-
-    this.organizationService.getById({}, { id }).subscribe({
-      next: (org: any) => {
-        const updatedMap = { ...this.organizationNames(), [id]: org.legalName };
-        this.organizationNames.set(updatedMap);
-      },
-    });
-    return `Cargando...`;
-  }
-
-  getPersonName(personId: any): string {
-    if (!personId) return 'Unknown user';
-
-    const id = typeof personId === 'object' && 'value' in personId
-      ? personId.value
-      : personId;
-
-    const cachedName = this.personNames()[id];
-    if (cachedName) return cachedName;
-
-    this.personService.getById({}, { id }).subscribe({
-      next: (person: any) => {
-        const fullName = person?.fullName || `${person?.firstName || ''} ${person?.lastName || ''}`.trim();
-        const updatedMap = { ...this.personNames(), [id]: fullName || `Usuario ${id}` };
-        this.personNames.set(updatedMap);
-      },
-      error: () => {
-        const updatedMap = { ...this.personNames(), [id]: `Usuario ${id}` };
-        this.personNames.set(updatedMap);
-      }
-    });
-    return `Cargando...`;
+  getStatusBadgeClass(status: InvitationStatus): string {
+    switch (status) {
+      case InvitationStatus.PENDING:
+        return 'chip-pending';
+      case InvitationStatus.ACCEPTED:
+        return 'chip-accepted';
+      case InvitationStatus.REJECTED:
+        return 'chip-rejected';
+      case InvitationStatus.EXPIRED:
+        return 'chip-expired';
+      default:
+        return '';
+    }
   }
 
   get pendingInvitationsCount(): number {
@@ -221,4 +184,21 @@ export class InvitationListComponent implements OnInit {
     ).length;
   }
 
+  get acceptedInvitationsCount(): number {
+    return this.invitations().filter(invitation =>
+      invitation.status === InvitationStatus.ACCEPTED
+    ).length;
+  }
+
+  get rejectedInvitationsCount(): number {
+    return this.invitations().filter(invitation =>
+      invitation.status === InvitationStatus.REJECTED
+    ).length;
+  }
+
+  get expiredInvitationsCount(): number {
+    return this.invitations().filter(invitation =>
+      invitation.status === InvitationStatus.EXPIRED
+    ).length;
+  }
 }

@@ -1,20 +1,3 @@
-<form (ngSubmit)="onDelete()" class="delete-org-form">
-  <mat-form-field appearance="fill" class="delete-org-input">
-    <mat-label>{{ 'organization-configuration.ruc-label' | translate }}</mat-label>
-    <input matInput
-           [(ngModel)]="ruc"
-           name="ruc"
-           [placeholder]="'organization-configuration.ruc-placeholder' | translate"
-           maxlength="11"
-           required />
-    <mat-error *ngIf="ruc && !isFormValid">
-      {{ 'organization-configuration.ruc-error' | translate }}
-    </mat-error>
-  </mat-form-field>
-  <button mat-raised-button color="warn"
-          [disabled]="!isFormValid"
-          type="submit"
-          class="delete-org-btn">
-    {{ 'organization-configuration.delete' | translate }}
-  </button>
-</form>
+<button mat-raised-button color="warn" (click)="onDelete()" class="delete-org-btn">
+  {{ 'organization-configuration.delete' | translate }}
+</button>

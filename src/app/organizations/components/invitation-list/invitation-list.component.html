@@ -12,6 +12,36 @@
   </mat-card-header>
 
   <mat-card-content>
+    <!-- Filtros -->
+    <div class="filters-container">
+      <mat-chip-set aria-label="Filtros de invitaciones">
+        <mat-chip 
+          [class.selected]="selectedFilter() === 'ALL'"
+          (click)="setFilter('ALL')">
+          {{ 'invitation.filters.all' | translate }} ({{ invitations().length }})
+        </mat-chip>
+        <mat-chip 
+          [class.selected]="selectedFilter() === invitationStatus.PENDING"
+          (click)="setFilter(invitationStatus.PENDING)">
+          {{ 'invitation.filters.pending' | translate }} ({{ pendingInvitationsCount }})
+        </mat-chip>
+        <mat-chip 
+          [class.selected]="selectedFilter() === invitationStatus.ACCEPTED"
+          (click)="setFilter(invitationStatus.ACCEPTED)">
+          {{ 'invitation.filters.accepted' | translate }} ({{ acceptedInvitationsCount }})
+        </mat-chip>
+        <mat-chip 
+          [class.selected]="selectedFilter() === invitationStatus.REJECTED"
+          (click)="setFilter(invitationStatus.REJECTED)">
+          {{ 'invitation.filters.rejected' | translate }} ({{ rejectedInvitationsCount }})
+        </mat-chip>
+        <mat-chip 
+          [class.selected]="selectedFilter() === invitationStatus.EXPIRED"
+          (click)="setFilter(invitationStatus.EXPIRED)">
+          {{ 'invitation.filters.expired' | translate }} ({{ expiredInvitationsCount }})
+        </mat-chip>
+      </mat-chip-set>
+    </div>
 
     <div *ngIf="loading()" class="loading-container">
       <mat-spinner diameter="50"></mat-spinner>
@@ -24,15 +54,15 @@
       <p>{{ 'invitation.empty.description' | translate }}</p>
     </div>
 
-    <div *ngIf="!loading() && invitations().length > 0" class="table-container">
-      <table mat-table [dataSource]="invitations()" class="invitations-table">
+    <div *ngIf="!loading() && filteredInvitations().length > 0" class="table-container">
+      <table mat-table [dataSource]="filteredInvitations()" class="invitations-table">
 
         <ng-container matColumnDef="organization">
           <th mat-header-cell *matHeaderCellDef>{{ 'invitation-table.organization' | translate }}</th>
           <td mat-cell *matCellDef="let invitation">
             <div class="org-info">
               <mat-icon>business</mat-icon>
-              <span>{{ getOrganizationName(invitation.organizationId) }}</span>
+              <span>{{ invitation.organizationName || 'Organización desconocida' }}</span>
             </div>
           </td>
         </ng-container>
@@ -42,7 +72,7 @@
           <td mat-cell *matCellDef="let invitation">
             <div class="person-info">
               <mat-icon>person</mat-icon>
-              <span>{{ getPersonName(invitation.invitedBy) }}</span>
+              <span>{{ invitation.inviterName || 'Usuario desconocido' }}</span>
             </div>
           </td>
         </ng-container>
@@ -52,7 +82,17 @@
           <td mat-cell *matCellDef="let invitation">
             <div class="date-info">
               <mat-icon>schedule</mat-icon>
-              <span>{{ invitation.invitedAt | date:'short' }}</span>
+              <span>{{ (invitation.createdAt || invitation.invitedAt) | date:'short' }}</span>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="expiresAt">
+          <th mat-header-cell *matHeaderCellDef>{{ 'invitation-table.expiresAt' | translate }}</th>
+          <td mat-cell *matCellDef="let invitation">
+            <div class="date-info">
+              <mat-icon>event</mat-icon>
+              <span>{{ invitation.expiresAt ? (invitation.expiresAt | date:'short') : 'N/A' }}</span>
             </div>
           </td>
         </ng-container>
@@ -62,11 +102,7 @@
           <td mat-cell *matCellDef="let invitation">
             <mat-chip
               class="custom-chip"
-              [ngClass]="{
-        'chip-accepted': invitation.status === invitationStatus.ACCEPTED,
-        'chip-rejected': invitation.status === invitationStatus.REJECTED,
-        'chip-pending': invitation.status === invitationStatus.PENDING
-      }"
+              [ngClass]="getStatusBadgeClass(invitation.status)"
               [disableRipple]="true"
             >
               {{ ('invitation-statuses.' + invitation.status.toLowerCase()) | translate }}
@@ -81,25 +117,24 @@
               <button
                 mat-raised-button
                 color="primary"
-                [disabled]="processingInvitation() === invitation.invitationId.value"
+                [disabled]="processingInvitation() === invitation.id"
                 (click)="acceptInvitation(invitation)">
-                <mat-icon *ngIf="processingInvitation() === invitation.invitationId.value">hourglass_empty</mat-icon>
-                <mat-icon *ngIf="processingInvitation() !== invitation.invitationId.value">check</mat-icon>
+                <mat-icon *ngIf="processingInvitation() === invitation.id">hourglass_empty</mat-icon>
+                <mat-icon *ngIf="processingInvitation() !== invitation.id">check</mat-icon>
                 {{ 'invitation-table.accept' | translate }}
               </button>
 
               <button
                 mat-button
                 color="warn"
-                [disabled]="processingInvitation() === invitation.invitationId.value"
+                [disabled]="processingInvitation() === invitation.id"
                 (click)="rejectInvitation(invitation)">
-                <mat-icon *ngIf="processingInvitation() === invitation.invitationId.value">hourglass_empty</mat-icon>
-                <mat-icon *ngIf="processingInvitation() !== invitation.invitationId.value">close</mat-icon>
+                <mat-icon *ngIf="processingInvitation() === invitation.id">hourglass_empty</mat-icon>
+                <mat-icon *ngIf="processingInvitation() !== invitation.id">close</mat-icon>
                 {{ 'invitation-table.reject' | translate }}
               </button>
             </div>
-
-            <div *ngIf="invitation.status !== invitationStatus.PENDING" class="no-actions">
+            <div class="status-only" *ngIf="invitation.status !== invitationStatus.PENDING">
               <span class="muted-text">{{ 'invitation.no-actions' | translate }}</span>
             </div>
           </td>

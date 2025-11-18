@@ -8,4 +8,9 @@
     <mat-label>{{ 'organization-configuration.commercial-name' | translate }}</mat-label>
     <input matInput [(ngModel)]="organization.commercialName" [name]="'organization-configuration.commercial-name' | translate" />
   </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'organization-configuration.ruc-label' | translate }}</mat-label>
+    <input matInput [(ngModel)]="rucValue" name="ruc" maxlength="11" [placeholder]="'organization-configuration.ruc-placeholder' | translate" />
+  </mat-form-field>
 </form>

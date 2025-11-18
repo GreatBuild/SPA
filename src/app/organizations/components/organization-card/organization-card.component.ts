@@ -22,13 +22,17 @@ export class OrganizationCardComponent {
   }
 
   onCardClick(){
-    const role = this.isContractorOn() ? OrganizationMemberType.CONTRACTOR : OrganizationMemberType.WORKER;
+    // Usar userRole del backend en lugar de comparar con createdBy
+    const role = this.organization.userRole === 'CONTRACTOR'
+      ? OrganizationMemberType.CONTRACTOR
+      : OrganizationMemberType.WORKER;
     const orgId = this.organization.id
     this.sessionService.setOrganization(orgId, role)
     this.router.navigate([`/organizations/${orgId}`]);
   }
 
   isContractorOn() {
-    return this.sessionService.getPersonId() === this.organization.createdBy
+    // Usar userRole del backend
+    return this.organization.userRole === 'CONTRACTOR';
   }
 }

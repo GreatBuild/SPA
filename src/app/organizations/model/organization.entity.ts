@@ -14,6 +14,7 @@ export class Organization {
   public readonly createdBy?: number;
   public readonly createdAt: Date;
   public status: OrganizationStatus;
+  public userRole?: 'CONTRACTOR' | 'MEMBER'; // Rol del usuario autenticado en esta organización
 
   public readonly members: OrganizationMember[] = [];
   public readonly invitations: OrganizationInvitation[] = [];
@@ -27,20 +28,24 @@ export class Organization {
                 commercialName,
                 ruc,
                 createdBy,
+                ownerId,
                 createdAt = new Date(),
                 status = OrganizationStatus.ACTIVE,
                 members = [],
-                invitations = []
+                invitations = [],
+                userRole
               }: {
     id?: number;
     legalName?: string;
     commercialName?: string;
-    ruc?: Ruc;
+    ruc?: Ruc | string;
     createdBy?: number;
-    createdAt?: Date;
+    ownerId?: number;
+    createdAt?: Date | string;
     status?: OrganizationStatus;
     members?: OrganizationMember[];
     invitations?: OrganizationInvitation[];
+    userRole?: 'CONTRACTOR' | 'MEMBER';
   }) {
     if (!legalName || !ruc) {
       console.warn('Organization constructed with missing required fields:', {
@@ -53,10 +58,14 @@ export class Organization {
     this.id = id;
     this.legalName = legalName ?? '';
     this.commercialName = commercialName ?? '';
-    this.ruc = ruc ?? new Ruc();
-    this.createdBy = createdBy;
-    this.createdAt = createdAt;
+    // Manejar ruc como string o Ruc object
+    this.ruc = typeof ruc === 'string' ? new Ruc(ruc) : (ruc ?? new Ruc());
+    // Usar ownerId si createdBy no está definido
+    this.createdBy = createdBy ?? ownerId;
+    // Manejar createdAt como string o Date
+    this.createdAt = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
     this.status = status;
+    this.userRole = userRole;
     this.members = members;
     this.invitations = invitations;
   }

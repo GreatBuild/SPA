@@ -16,6 +16,7 @@ import {PersonService} from '../../../iam/services/person.service';
 import {Person} from '../../../iam/model/person.entity';
 import {OrganizationInvitation} from '../../model/organization-invitation.entity';
 import {InvitationStatus} from '../../model/invitation-status.vo';
+import {OrganizationMemberType} from '../../model/organization-member-type.vo';
 
 @Component({
   selector: 'app-member',
@@ -51,18 +52,9 @@ export class MemberComponent implements OnInit {
   }
 
   private checkCreatorStatus(): void {
-    const orgId = this.session.getOrganizationId();
-    const personId = this.session.getPersonId();
-
-    if (!orgId || !personId) return this.isCreator.set(false);
-
-    this.organizationService.isOrganizationCreator(orgId, personId).subscribe({
-      next: (res) => this.isCreator.set(res),
-      error: (err) => {
-        console.error('Error checking creator status:', err);
-        this.isCreator.set(false);
-      }
-    });
+    // Verificar si el rol del usuario es CONTRACTOR
+    const role = this.session.getOrganizationRole();
+    this.isCreator.set(role === OrganizationMemberType.CONTRACTOR);
   }
 
   readonly sortedMembers = computed(() =>
@@ -99,26 +91,28 @@ export class MemberComponent implements OnInit {
 
     const invitationData = {
       organizationId,
-      email // el email ya viene directamente del modal
+      inviteeEmail: email // Campo requerido por el backend
     };
 
-    console.log(invitationData);
+    console.log('Sending invitation:', invitationData);
 
     this.organizationInvitationService.create(invitationData).subscribe({
-      next: () => {
-        this.snackBar.open('Invitation sent successfully', 'Close', {
+      next: (response: any) => {
+        console.log('Invitation sent:', response);
+        this.snackBar.open('✅ Invitación enviada exitosamente', 'Cerrar', {
           duration: 3000,
           panelClass: ['snackbar-success']
         });
-        // Puedes recargar la lista aquí si lo necesitas:
+        // Opcional: recargar la lista de miembros si las invitaciones se muestran ahí
         // this.loadMembers();
       },
-      error: (err: unknown) => {
-        this.snackBar.open('Error sending invitation', 'Close', {
-          duration: 3000,
+      error: (err: any) => {
+        console.error('Error sending invitation:', err);
+        const errorMessage = err?.error?.message || 'Error al enviar la invitación';
+        this.snackBar.open(`❌ ${errorMessage}`, 'Cerrar', {
+          duration: 5000,
           panelClass: ['snackbar-error']
         });
-        console.error('Error sending invitation:', err);
       }
     });
   }
@@ -132,21 +126,28 @@ export class MemberComponent implements OnInit {
       return;
     }
 
-    this.organizationMemberService.getAll({}, { id: organizationId }).subscribe({
-      next: (members: any[]) => {
+    this.organizationMemberService.getOrganizationMembers(organizationId).subscribe({
+      next: (members) => {
+        console.log('Miembros de la organización:', members);
         this.members.set(
           members.map((member) => ({
-            memberType: member.memberType,
-            joinedAt: member.joinedAt,
-            fullName: member.fullName ?? '',
-            // Si no viene email en el response, no puedes mostrarlo
-            email: member.email ?? '', // ← Si no existe, será string vacío
-            member
+            memberType: member.role,
+            joinedAt: new Date(), // El endpoint no devuelve joinedAt, usar fecha actual o eliminar si no es necesario
+            fullName: `${member.firstName} ${member.lastName}`,
+            email: member.email,
+            member: {
+              id: member.memberId,
+              personId: member.userId,
+              memberType: member.role,
+              organizationId: organizationId
+            } as any // Mapeo simplificado para compatibilidad
           }))
         );
       },
       error: (err: any) => {
-        console.error('Failed to load organization members:', err);
+        console.error('Error al cargar miembros de la organización:', err);
+        const errorMessage = err?.error?.message || err?.message || 'Error desconocido';
+        console.error('Detalles del error:', errorMessage);
         this.members.set([]);
       }
     });

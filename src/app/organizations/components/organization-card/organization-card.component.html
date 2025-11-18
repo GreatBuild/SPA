@@ -1,13 +1,20 @@
 <mat-card *ngIf="organization" (click)="onCardClick()" class="organization-card">
   <mat-card-header>
-    <mat-card-title>{{ organization.legalName }}</mat-card-title>
-    <mat-card-subtitle *ngIf="organization.commercialName">
-      {{ organization.commercialName }}
-    </mat-card-subtitle>
+    <div class="header-content">
+      <div class="title-section">
+        <mat-card-title>{{ organization.legalName }}</mat-card-title>
+        <mat-card-subtitle *ngIf="organization.commercialName">
+          {{ organization.commercialName }}
+        </mat-card-subtitle>
+      </div>
+      <span *ngIf="organization.userRole" class="role-badge" [class.contractor]="organization.userRole === 'CONTRACTOR'" [class.member]="organization.userRole === 'MEMBER'">
+        {{ organization.userRole === 'CONTRACTOR' ? ('organization-card.role.contractor' | translate) : ('organization-card.role.member' | translate) }}
+      </span>
+    </div>
   </mat-card-header>
 
   <mat-card-content>
-    <p><strong>{{ 'organization-card.ruc' | translate }}:</strong> {{ organization.ruc }}</p>
+    <p><strong>{{ 'organization-card.ruc' | translate }}:</strong> {{ organization.ruc.value || 'N/A' }}</p>
     <p><strong>{{ 'organization-card.status' | translate }}:</strong> {{ organization.status }}</p>
     <p><strong>{{ 'organization-card.created-at' | translate }}:</strong> {{ organization.createdAt | date }}</p>
   </mat-card-content>

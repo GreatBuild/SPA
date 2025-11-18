@@ -230,7 +230,11 @@
   "organization-card": {
     "ruc": "RUC",
     "status": "Estado",
-    "created-at": "Creada el"
+    "created-at": "Creada el",
+    "role": {
+      "contractor": "Contratista",
+      "member": "Miembro"
+    }
   },
   "organization-list": {
     "empty": "No se encontraron organizaciones."
@@ -246,6 +250,7 @@
     "submit": "Cambiar",
     "errors": {
       "empty-legal-name": "El nombre legal no puede estar vacío.",
+      "invalid-ruc": "El RUC debe tener 11 dígitos y comenzar con 1 o 2.",
       "no-changes": "No se realizaron cambios.",
       "api-failed": "Ocurrió un error al actualizar la organización."
     },
@@ -256,6 +261,13 @@
     "ruc-label": "RUC",
     "ruc-placeholder": "Ingrese el RUC de la organización",
     "delete": "Eliminar"
+  },
+  "delete-organization-modal": {
+    "title": "Confirmar eliminación",
+    "message": "¿Estás seguro de que deseas eliminar esta organización?",
+    "warning": "Esta acción no se puede deshacer.",
+    "cancel": "Cancelar",
+    "confirm": "Eliminar"
   },
   "project-tab": {
     "title": "Gestión de Proyectos",
@@ -751,9 +763,17 @@
     "title": "Mis invitaciones",
     "pending": "invitaciones pendientes",
     "loading": "Buscando invitaciones...",
+    "no-actions": "Sin acciones disponibles",
     "empty": {
       "title": "No se encontraron invitaciones",
-      "description": "Actualmente no tienes invitaciones pendientes"
+      "description": "Actualmente no tienes invitaciones"
+    },
+    "filters": {
+      "all": "Todas",
+      "pending": "Pendientes",
+      "accepted": "Aceptadas",
+      "rejected": "Rechazadas",
+      "expired": "Expiradas"
     }
   },
 
@@ -764,7 +784,10 @@
     "invite-modal": {
       "title": "Invitar a un nuevo miembro",
       "email-field-label": "Dirección de correo electrónico",
-      "placeholder": "juanperez@ejemplo.com"
+      "placeholder": "juanperez@ejemplo.com",
+      "invalid-email": "Por favor, ingresa un correo electrónico válido",
+      "success": "Invitación enviada exitosamente",
+      "error": "Error al enviar la invitación"
     }
   },
 
@@ -772,6 +795,7 @@
     "organization": "Organización:",
     "invitedBy": "Invitado por:",
     "invitedAt": "Fecha de invitación:",
+    "expiresAt": "Fecha de expiración:",
     "status": "Estado:",
     "actions": "Acciones:",
     "accept": "Aceptar",
@@ -781,6 +805,7 @@
   "invitation-statuses": {
     "pending": "Pendiente",
     "accepted": "Aceptada",
-    "rejected": "Rechazada"
+    "rejected": "Rechazada",
+    "expired": "Expirada"
   }
 }
