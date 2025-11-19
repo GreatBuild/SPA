@@ -60,7 +60,7 @@ export class InvitationListComponent implements OnInit {
 
   loadInvitations() {
     this.loading.set(true);
-    
+
     // Usar el nuevo endpoint my-invitations
     this.invitationService.getMyInvitations({}).subscribe({
       next: (response: any[]) => {
@@ -93,7 +93,7 @@ export class InvitationListComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error loading invitations:', error);
-        const errorMessage = error.status === 401 
+        const errorMessage = error.status === 401
           ? 'No autorizado. Por favor, inicia sesión nuevamente.'
           : 'Error al cargar las invitaciones';
         this.showSnackBar(errorMessage, 'error');
@@ -123,11 +123,11 @@ export class InvitationListComponent implements OnInit {
   async acceptInvitation(invitation: OrganizationInvitation): Promise<void> {
     const id = invitation.id?.toString() ?? '';
     this.processingInvitation.set(invitation.id ?? null);
-    
+
     try {
       // Usar el nuevo endpoint POST /api/invitations/{id}/accept
       await this.invitationService.accept({}, { id }).toPromise();
-      
+
       this.showSnackBar('✅ Invitación aceptada exitosamente', 'success');
       await this.loadInvitations();
     } catch (error) {
@@ -141,11 +141,11 @@ export class InvitationListComponent implements OnInit {
   async rejectInvitation(invitation: OrganizationInvitation): Promise<void> {
     const id = invitation.id?.toString() ?? '';
     this.processingInvitation.set(invitation.id ?? null);
-    
+
     try {
       // Usar el nuevo endpoint POST /api/invitations/{id}/reject
       await this.invitationService.reject({}, { id }).toPromise();
-      
+
       this.showSnackBar('📋 Invitación rechazada', 'info');
       await this.loadInvitations();
     } catch (error) {

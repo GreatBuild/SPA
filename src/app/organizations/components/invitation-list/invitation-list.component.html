@@ -15,27 +15,27 @@
     <!-- Filtros -->
     <div class="filters-container">
       <mat-chip-set aria-label="Filtros de invitaciones">
-        <mat-chip 
+        <mat-chip
           [class.selected]="selectedFilter() === 'ALL'"
           (click)="setFilter('ALL')">
           {{ 'invitation.filters.all' | translate }} ({{ invitations().length }})
         </mat-chip>
-        <mat-chip 
+        <mat-chip
           [class.selected]="selectedFilter() === invitationStatus.PENDING"
           (click)="setFilter(invitationStatus.PENDING)">
           {{ 'invitation.filters.pending' | translate }} ({{ pendingInvitationsCount }})
         </mat-chip>
-        <mat-chip 
+        <mat-chip
           [class.selected]="selectedFilter() === invitationStatus.ACCEPTED"
           (click)="setFilter(invitationStatus.ACCEPTED)">
           {{ 'invitation.filters.accepted' | translate }} ({{ acceptedInvitationsCount }})
         </mat-chip>
-        <mat-chip 
+        <mat-chip
           [class.selected]="selectedFilter() === invitationStatus.REJECTED"
           (click)="setFilter(invitationStatus.REJECTED)">
           {{ 'invitation.filters.rejected' | translate }} ({{ rejectedInvitationsCount }})
         </mat-chip>
-        <mat-chip 
+        <mat-chip
           [class.selected]="selectedFilter() === invitationStatus.EXPIRED"
           (click)="setFilter(invitationStatus.EXPIRED)">
           {{ 'invitation.filters.expired' | translate }} ({{ expiredInvitationsCount }})
