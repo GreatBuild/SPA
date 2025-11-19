@@ -155,9 +155,18 @@ export class MemberComponent implements OnInit {
 
   removeMember(member: OrganizationMember): void {
     const currentUserId = this.session.getPersonId();
+    const organizationId = this.session.getOrganizationId();
 
     if (!this.isCreator()) {
       this.snackBar.open('No tienes permisos para eliminar miembros', 'Cerrar', {
+        duration: 3000,
+        panelClass: ['snackbar-error']
+      });
+      return;
+    }
+
+    if (!organizationId) {
+      this.snackBar.open('No se pudo identificar la organización', 'Cerrar', {
         duration: 3000,
         panelClass: ['snackbar-error']
       });
@@ -179,28 +188,21 @@ export class MemberComponent implements OnInit {
     dialogRef.afterClosed().subscribe(confirmed => {
       if (!confirmed || !member.id) return;
 
-      this.organizationMemberService.delete({}, { id: member.id }).subscribe({
+      // Usar el nuevo endpoint DELETE /api/organizations/{orgId}/members/{memberId}
+      this.organizationMemberService.deleteMember(organizationId!, member.id).subscribe({
         next: () => {
-          this.snackBar.open('Miembro eliminado con éxito', 'Cerrar', {
+          this.snackBar.open('✅ Miembro eliminado con éxito', 'Cerrar', {
             duration: 3000,
             panelClass: ['snackbar-success']
           });
 
-          this.organizationInvitationService.getAll().subscribe((invitations: any[]) => {
-            const toDelete = invitations.filter(inv =>
-              inv.personId === member.personId && inv.organizationId === member.organizationId
-            );
-
-            toDelete.forEach(inv =>
-              this.organizationInvitationService.delete({}, { id: inv.id }).subscribe()
-            );
-          });
-
+          // Recargar la lista de miembros
           this.loadMembers();
         },
-        error: (err: unknown) => {
+        error: (err: any) => {
           console.error('Error al eliminar miembro:', err);
-          this.snackBar.open('Error al eliminar miembro', 'Cerrar', {
+          const errorMessage = err?.error?.message || 'Error al eliminar miembro';
+          this.snackBar.open(`❌ ${errorMessage}`, 'Cerrar', {
             duration: 3000,
             panelClass: ['snackbar-error']
           });

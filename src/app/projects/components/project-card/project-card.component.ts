@@ -61,7 +61,7 @@ export class ProjectCardComponent {
     const statusClassMap: Record<string, string> = {
       [ProjectStatus.BASIC_STUDIES]: 'status-planning',
       [ProjectStatus.DESIGN_IN_PROCESS]: 'status-in-progress',
-      [ProjectStatus.REJECT]: 'status-rejected',
+      [ProjectStatus.CHANGE_REQUESTED]: 'status-rejected',
       [ProjectStatus.APPROVED]: 'status-approved'
     };
 

@@ -291,13 +291,21 @@
   "create-project": {
     "title": "Create new project",
     "name": "Project name",
+    "name-placeholder": "Residential Building Los Pinos",
     "description": "Description",
-    "contracting-entity-email": "Client's email address",
+    "description-placeholder": "Construction project of a 10-story building...",
     "organization": "Organization",
-    "starting-date": "Start date",
-    "ending-date": "End date",
+    "contracting-entity": "Contracting Entity ID",
+    "contracting-entity-placeholder": "Enter the client user ID",
+    "contracting-entity-hint": "The ID must correspond to a user with CLIENT role",
+    "contracting-entity-email": "Contracting Entity Email",
+    "contracting-entity-email-placeholder": "example@company.com",
+    "contracting-entity-email-hint": "Email of the user who will act as the project client",
+    "end-date": "End date",
+    "end-date-placeholder": "Select the project end date",
+    "start-date-hint": "Start date will be today's date",
     "cancel": "Cancel",
-    "submit": "Create"
+    "submit": "Create Project"
   },
   "project-card": {
     "starting-date": "Start date",

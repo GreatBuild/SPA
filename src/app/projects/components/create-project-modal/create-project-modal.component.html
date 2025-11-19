@@ -3,16 +3,17 @@
 <div mat-dialog-content class="form-container">
   <mat-form-field appearance="outline" class="full-width">
     <mat-label>{{ 'create-project.name' | translate }}</mat-label>
-    <input matInput [(ngModel)]="name" required
-           [placeholder]="'create-project.name' | translate"
+    <input matInput [(ngModel)]="projectName" required
+           [placeholder]="'create-project.name-placeholder' | translate"
            [title]="'create-project.name' | translate" />
+    <mat-error *ngIf="nameError">{{ nameError }}</mat-error>
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="full-width">
     <mat-label>{{ 'create-project.description' | translate }}</mat-label>
-    <input matInput [(ngModel)]="description"
-           [placeholder]="'create-project.description' | translate"
-           [title]="'create-project.description' | translate" />
+    <textarea matInput [(ngModel)]="description" rows="3"
+              [placeholder]="'create-project.description-placeholder' | translate"
+              [title]="'create-project.description' | translate"></textarea>
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="full-width">
@@ -21,22 +22,20 @@
            type="email"
            [(ngModel)]="contractingEntityEmail"
            required
-           [placeholder]="'create-project.contracting-entity-email' | translate"
-           [title]="'create-project.contractor-email' | translate" />
+           [placeholder]="'create-project.contracting-entity-email-placeholder' | translate"
+           [title]="'create-project.contracting-entity-email' | translate" />
+    <mat-hint>{{ 'create-project.contracting-entity-email-hint' | translate }}</mat-hint>
+    <mat-error *ngIf="contractingEntityError">{{ contractingEntityError }}</mat-error>
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="full-width">
-    <mat-label>{{ 'create-project.starting-date' | translate }}</mat-label>
-    <input matInput type="date" [(ngModel)]="startingDate" name="startingDate" required
-           [placeholder]="'create-project.starting-date' | translate"
-           [title]="'create-project.starting-date' | translate" />
-  </mat-form-field>
-
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>{{ 'create-project.ending-date' | translate }}</mat-label>
-    <input matInput type="date" [(ngModel)]="endingDate" name="endingDate" required
-           [placeholder]="'create-project.ending-date' | translate"
-           [title]="'create-project.ending-date' | translate" />
+    <mat-label>{{ 'create-project.end-date' | translate }}</mat-label>
+    <input matInput type="date" [(ngModel)]="endDate" name="endDate" required
+           [min]="endDate"
+           [placeholder]="'create-project.end-date-placeholder' | translate"
+           [title]="'create-project.end-date' | translate" />
+    <mat-hint>{{ 'create-project.start-date-hint' | translate }}</mat-hint>
+    <mat-error *ngIf="endDateError">{{ endDateError }}</mat-error>
   </mat-form-field>
 </div>
 
@@ -46,7 +45,7 @@
   </button>
   <button mat-raised-button color="primary"
           (click)="submit()"
-          [disabled]="!name || !description || !contractingEntityEmail">
+          [disabled]="!projectName || !endDate || !contractingEntityEmail">
     {{ 'create-project.submit' | translate }}
   </button>
 </div>

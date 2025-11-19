@@ -41,7 +41,6 @@ export class OrganizationMemberService {
   getByOrganizationId = this.service['getByOrganizationId'];
   create = this.service['create'];
   update = this.service['update'];
-  delete = this.service['delete'];
 
   /**
    * Obtiene la lista de miembros de una organización.
@@ -58,6 +57,25 @@ export class OrganizationMemberService {
 
     return this.http.get<OrganizationMemberResponse[]>(
       `${this.apiBaseUrl}organizations/${organizationId}/members`,
+      { headers }
+    );
+  }
+
+  /**
+   * Elimina un miembro de una organización
+   * DELETE /api/organizations/{orgId}/members/{memberId}
+   * @param organizationId ID de la organización
+   * @param memberId ID del miembro a eliminar
+   * @returns Observable<void>
+   */
+  deleteMember(organizationId: number, memberId: number): Observable<void> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    });
+
+    return this.http.delete<void>(
+      `${this.apiBaseUrl}organizations/${organizationId}/members/${memberId}`,
       { headers }
     );
   }

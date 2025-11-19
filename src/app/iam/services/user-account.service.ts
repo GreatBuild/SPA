@@ -48,4 +48,19 @@ export class UserAccountService {
 
     return this.http.get(`${this.apiBaseUrl}users/internal/${id}`, { headers });
   }
+
+  /**
+   * Obtiene información interna de un usuario por su email
+   * GET /api/users/internal/email/{email}
+   * @param email Email del usuario
+   * @returns Observable con los datos del usuario (id, email, firstName, lastName, roles)
+   */
+  getUserByEmail(email: string): Observable<any> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    });
+
+    return this.http.get(`${this.apiBaseUrl}users/internal/email/${encodeURIComponent(email)}`, { headers });
+  }
 }

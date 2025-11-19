@@ -306,12 +306,21 @@
   "create-project": {
     "title": "Crear nuevo proyecto",
     "name": "Nombre del proyecto",
+    "name-placeholder": "Edificio Residencial Los Pinos",
     "description": "Descripción",
+    "description-placeholder": "Proyecto de construcción de edificio de 10 pisos...",
     "organization": "Organización",
-    "starting-date": "Fecha de inicio",
-    "ending-date": "Fecha de finalización",
+    "contracting-entity": "ID de Entidad Contratante",
+    "contracting-entity-placeholder": "Ingrese el ID del usuario cliente",
+    "contracting-entity-hint": "El ID debe corresponder a un usuario con rol CLIENT",
+    "contracting-entity-email": "Email de la Entidad Contratante",
+    "contracting-entity-email-placeholder": "ejemplo@empresa.com",
+    "contracting-entity-email-hint": "Email del usuario que actuará como cliente del proyecto",
+    "end-date": "Fecha de finalización",
+    "end-date-placeholder": "Seleccione la fecha de fin del proyecto",
+    "start-date-hint": "La fecha de inicio será la fecha actual",
     "cancel": "Cancelar",
-    "submit": "Crear"
+    "submit": "Crear Proyecto"
   },
   "create-organization": {
     "title": "Crear nueva organización",

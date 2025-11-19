@@ -29,52 +29,94 @@ import { Organization } from '../../../organizations/model/organization.entity';
   styleUrl: './create-project-modal.component.css'
 })
 export class CreateProjectModalComponent {
-  name='';
-  description='';
-  startingDate='';
-  endingDate = '';
-  organizations: Organization[] = [];
-  contractingEntityEmail: string = '';
+  projectName = '';
+  description = '';
+  endDate = '';
+  contractingEntityEmail = ''; // Cambiado de contractingEntityId a contractingEntityEmail
+  
+  // Validaciones
+  nameError = '';
+  endDateError = '';
+  contractingEntityError = '';
 
   constructor(
     private dialogRef: MatDialogRef<CreateProjectModalComponent>,
     private session: SessionService
   ) {
+    // Establecer fecha mínima como hoy
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    this.startingDate = `${yyyy}-${mm}-${dd}`;
-    this.endingDate = `${yyyy}-${mm}-${dd}`;
+    this.endDate = `${yyyy}-${mm}-${dd}`;
   }
 
   close(): void {
     this.dialogRef.close();
   }
 
-  submit(): void {
-    const orgId = this.session.getOrganizationId();
+  validateForm(): boolean {
+    let isValid = true;
 
-    if (this.name && this.description && this.endingDate && orgId) {
-
-      const data = {
-        projectName: this.name,
-        description: this.description,
-        startDate: this.startingDate,
-        endDate: this.endingDate,
-        organizationId: this.session.getOrganizationId(),
-        contractingEntityEmail: this.contractingEntityEmail.trim()
-      };
-
-      this.dialogRef.close(data);
+    // Validar nombre del proyecto
+    if (!this.projectName || this.projectName.trim() === '') {
+      this.nameError = 'El nombre del proyecto es obligatorio';
+      isValid = false;
     } else {
-      console.warn("Form validation failed:", {
-        name: this.name,
-        description: this.description,
-        endingDate: this.endingDate,
-        organizationId: orgId
-      });
+      this.nameError = '';
     }
+
+    // Validar fecha de fin
+    if (!this.endDate) {
+      this.endDateError = 'La fecha de fin es obligatoria';
+      isValid = false;
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(this.endDate);
+      
+      if (selectedDate < today) {
+        this.endDateError = 'La fecha de fin debe ser hoy o posterior';
+        isValid = false;
+      } else {
+        this.endDateError = '';
+      }
+    }
+
+    // Validar entidad contratante (email)
+    if (!this.contractingEntityEmail || this.contractingEntityEmail.trim() === '') {
+      this.contractingEntityError = 'El email de la entidad contratante es obligatorio';
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.contractingEntityEmail)) {
+      this.contractingEntityError = 'Debe ingresar un email válido';
+      isValid = false;
+    } else {
+      this.contractingEntityError = '';
+    }
+
+    return isValid;
   }
 
+  submit(): void {
+    if (!this.validateForm()) {
+      return;
+    }
+
+    const orgId = this.session.getOrganizationId();
+
+    if (!orgId) {
+      console.error('No organization ID found in session');
+      return;
+    }
+
+    const data = {
+      projectName: this.projectName.trim(),
+      description: this.description?.trim() || undefined,
+      endDate: this.endDate,
+      organizationId: orgId,
+      contractingEntityEmail: this.contractingEntityEmail.trim() // Devolver email en lugar de ID
+    };
+
+    this.dialogRef.close(data);
+  }
 }
