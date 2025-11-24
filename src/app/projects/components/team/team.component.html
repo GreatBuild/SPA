@@ -90,77 +90,44 @@
 <ng-template #addMembersDialog>
   <h2 mat-dialog-title>{{ 'team.dialogs.add-members.title' | translate }}</h2>
   <div mat-dialog-content>
-    <!-- Buscador -->
-    <mat-form-field class="search-field" appearance="outline">
-      <mat-label>{{ 'team.dialogs.add-members.search' | translate }}</mat-label>
-      <input matInput [(ngModel)]="searchQuery" (keyup)="searchMembers()">
-      <mat-icon matSuffix>search</mat-icon>
+    <!-- Email -->
+    <mat-form-field class="full-width" appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput [(ngModel)]="searchEmail" type="email" placeholder="correo@dominio.com">
+      <button mat-icon-button matSuffix aria-label="Buscar" (click)="searchUserByEmail()" [disabled]="searchLoading">
+        <mat-icon>search</mat-icon>
+      </button>
+    </mat-form-field>
+    <div class="info-field" *ngIf="searchLoading">
+      <span class="label">Buscando...</span>
+    </div>
+    <div class="info-field success" *ngIf="foundUser">
+      <span class="label">Encontrado:</span>
+      <span class="value">{{ foundUser.fullName || '(sin nombre)' }} - {{ foundUser.email }}</span>
+    </div>
+    <div class="info-field error" *ngIf="searchError">
+      <span class="label">{{ searchError }}</span>
+    </div>
+
+    <!-- Rol -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>{{ 'team.dialogs.add-members.select-role' | translate }}</mat-label>
+      <mat-select [(ngModel)]="addRole">
+        <mat-option *ngFor="let role of projectRoles" [value]="role">
+          {{ getProjectRoleTranslation(role) }}
+        </mat-option>
+      </mat-select>
     </mat-form-field>
 
-    <!-- Mensaje de no resultados -->
-    <div *ngIf="filteredOrgMembers.length === 0 && !loading" class="no-results">
-      <p>{{ 'team.dialogs.add-members.no-results' | translate }}</p>
-    </div>
-
-    <!-- Tabla de miembros de la organización -->
-    <div class="org-members-table-container">
-      <table class="org-members-table" *ngIf="filteredOrgMembers.length > 0">
-        <thead>
-          <tr>
-            <th>{{ 'team.dialogs.add-members.select' | translate }}</th>
-            <th>{{ 'team.dialogs.add-members.name' | translate }}</th>
-            <th>{{ 'team.dialogs.add-members.email' | translate }}</th>
-            <th>{{ 'team.dialogs.add-members.role' | translate }}</th>
-            <th>{{ 'team.dialogs.add-members.specialty' | translate }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let member of filteredOrgMembers">
-            <td>
-              <mat-checkbox
-                [(ngModel)]="member.selected"
-                (change)="toggleMemberSelection(member)">
-              </mat-checkbox>
-            </td>
-            <td>{{ member.name }}</td>
-            <td>{{ member.email }}</td>
-            <td>
-              <mat-form-field *ngIf="member.selected" appearance="outline">
-                <mat-select
-                  [(ngModel)]="member.role"
-                  (selectionChange)="updateMemberRole(member, $event.value)"
-                  placeholder="{{ 'team.dialogs.add-members.select-role' | translate }}"
-                  required>
-                  <mat-option *ngFor="let role of projectRoles" [value]="role">
-                    {{ getProjectRoleTranslation(role) }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
-            </td>
-            <td>
-              <mat-form-field *ngIf="member.selected && member.role === 'SPECIALIST'" appearance="outline">
-                <mat-select
-                  [(ngModel)]="member.specialty"
-                  (selectionChange)="updateMemberSpecialty(member, $event.value)"
-                  placeholder="{{ 'team.dialogs.add-members.select-specialty' | translate }}"
-                  required>
-                  <mat-option *ngFor="let specialty of specialties" [value]="specialty">
-                    {{ getSpecialtyTranslation(specialty) }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Formulario (invisible, solo para validación) -->
-    <form [formGroup]="memberForm" class="hidden-form">
-      <div formArrayName="members">
-        <!-- Los controles se agregan dinámicamente -->
-      </div>
-    </form>
+    <!-- Especialidad -->
+    <mat-form-field appearance="outline" class="full-width" *ngIf="addRole === 'SPECIALIST'">
+      <mat-label>{{ 'team.dialogs.add-members.select-specialty' | translate }}</mat-label>
+      <mat-select [(ngModel)]="addSpecialty">
+        <mat-option *ngFor="let specialty of specialties" [value]="specialty">
+          {{ getSpecialtyTranslation(specialty) }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
   </div>
   <div mat-dialog-actions align="end">
     <button mat-button mat-dialog-close>
@@ -169,8 +136,8 @@
     <button
       mat-raised-button
       color="primary"
-      [disabled]="loading || memberForm.invalid || memberForm.get('members')?.value.length === 0"
-      (click)="submitAddMembers()">
+      [disabled]="addLoading || !foundUser || !addRole || (addRole === 'SPECIALIST' && !addSpecialty)"
+      (click)="submitAddMember()">
       {{ 'team.actions.add' | translate }}
     </button>
   </div>

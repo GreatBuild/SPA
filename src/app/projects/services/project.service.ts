@@ -18,6 +18,17 @@ export interface CreateProjectRequest {
   contractingEntityEmail: string; // email de la entidad contratante
 }
 
+export interface UpdateProjectRequest {
+  projectName?: string;
+  description?: string;
+  endDate?: string; // YYYY-MM-DD
+  contractingEntityEmail?: string;
+}
+
+export interface UpdateStatusRequest {
+  status: string;
+}
+
 /**
  * Response al crear un proyecto
  */
@@ -43,6 +54,11 @@ export class ProjectService {
     createEndpointConfig({ name: 'getById', method: HttpMethod.GET }, undefined, 'projects', '/:id'),
     createEndpointConfig({ name: 'getByClientId', method: HttpMethod.GET }, undefined, 'projects', '?clientId=:clientId'),
     createEndpointConfig({ name: 'getMyProjectsByOrganization', method: HttpMethod.GET }, undefined, 'projects', '/organization/:orgId/my-projects'),
+    createEndpointConfig({ name: 'getMembersByProject', method: HttpMethod.GET }, undefined, 'projects', '/:id/members'),
+    createEndpointConfig({ name: 'addMember', method: HttpMethod.POST }, undefined, 'projects', '/:projectId/members'),
+    createEndpointConfig({ name: 'deleteMember', method: HttpMethod.DELETE }, undefined, 'projects', '/:projectId/members/:memberId'),
+    createEndpointConfig({ name: 'updatePartial', method: HttpMethod.PUT }, undefined, 'projects', '/:id'),
+    createEndpointConfig({ name: 'updateStatus', method: HttpMethod.PUT }, undefined, 'projects', '/:id/status'),
     createEndpointConfig({ name: 'update', method: HttpMethod.PUT }, undefined, 'projects', '/:id'),
     createEndpointConfig({ name: 'delete', method: HttpMethod.DELETE }, undefined, 'projects', '/:id'),
   ]);
@@ -53,6 +69,11 @@ export class ProjectService {
   getById = this.service['getById'];
   getByClientId = this.service['getByClientId'];
   getMyProjectsByOrganization = this.service['getMyProjectsByOrganization'];
+  getMembersByProject = this.service['getMembersByProject'];
+  addMember = this.service['addMember'];
+  deleteMember = this.service['deleteMember'];
+  updatePartial = this.service['updatePartial'];
+  updateStatus = this.service['updateStatus'];
   update = this.service['update'];
   delete = this.service['delete'];
 
@@ -74,5 +95,34 @@ export class ProjectService {
       payload,
       { headers }
     );
+  }
+
+  /**
+   * Actualiza parcialmente un proyecto. Envía solo los campos presentes en payload.
+   */
+  updateProjectPartial(id: number | string, payload: UpdateProjectRequest): Observable<Project> {
+    return this.updatePartial(payload, { id });
+  }
+
+  /**
+   * Actualiza el estado de un proyecto.
+   */
+  updateProjectStatus(id: number | string, status: string): Observable<Project> {
+    const body: UpdateStatusRequest = { status };
+    return this.updateStatus(body, { id });
+  }
+
+  /**
+   * Elimina un miembro del proyecto.
+   */
+  deleteProjectMember(projectId: number | string, memberId: number | string): Observable<void> {
+    return this.deleteMember({}, { projectId, memberId });
+  }
+
+  /**
+   * Agrega un miembro al proyecto.
+   */
+  addProjectMember(projectId: number | string, payload: { userId: number; role: string; specialty: string }): Observable<Project> {
+    return this.addMember(payload, { projectId });
   }
 }

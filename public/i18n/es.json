@@ -376,6 +376,16 @@
       "task-adjusted-dates": "La fecha de vencimiento se ha ajustado automáticamente para coincidir con la fecha de inicio",
       "dates-adjusted-to-milestone": "Las fechas se han ajustado para encajar dentro del período del hito"
     },
+    "specialties": {
+      "ARCHITECTURE": "Arquitectura",
+      "STRUCTURES": "Estructuras",
+      "HSA": "Salud y Seguridad",
+      "TOPOGRAPHY": "Topografía",
+      "SANITATION": "Saneamiento",
+      "ELECTRICITY": "Electricidad",
+      "COMMUNICATIONS": "Comunicaciones",
+      "NON_APPLICABLE": "No aplica"
+    },
     "dialogs": {
       "add-milestone": {
         "title": "Añadir Nuevo Hito",
@@ -616,7 +626,8 @@
       "TOPOGRAPHY": "Topografía",
       "SANITATION": "Saneamiento",
       "ELECTRICITY": "Electricidad",
-      "COMMUNICATIONS": "Comunicaciones"
+      "COMMUNICATIONS": "Comunicaciones",
+      "NON_APPLICABLE": "No aplica"
     },
 
     "dialogs": {
@@ -715,7 +726,14 @@
     "QUALITY_ASSURANCE": "Control de Calidad",
     "UX_DESIGN": "Diseño UX",
     "PROJECT_MANAGEMENT": "Gestión de Proyectos",
-    "CYBERSECURITY": "Ciberseguridad"
+    "CYBERSECURITY": "Ciberseguridad",
+    "STRUCTURES": "Estructuras",
+    "HSA": "Salud y Seguridad",
+    "TOPOGRAPHY": "Topografía",
+    "SANITATION": "Saneamiento",
+    "ELECTRICITY": "Electricidad",
+    "COMMUNICATIONS": "Comunicaciones",
+    "NON_APPLICABLE": "No aplica"
   },
   "change-management": {
     "title": "Gestión de Cambios",

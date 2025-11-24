@@ -18,24 +18,26 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subscription, forkJoin } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
-import { ProjectTeamMemberService } from '../../services/project-team-member.service';
 import { OrganizationMemberService } from '../../../organizations/services/organization-member.service';
 import { PersonService } from '../../../iam/services/person.service';
 import { SessionService } from '../../../iam/services/session.service';
 import { ProjectService } from '../../services/project.service';
+import { ProjectTeamMemberService } from '../../services/project-team-member.service';
 
-import { ProjectTeamMember } from '../../model/project-team-member.entity';
 import { OrganizationMember } from '../../../organizations/model/organization-member.entity';
 import { Person } from '../../../iam/model/person.entity';
 import { ProjectRole } from '../../model/project-role.vo';
 import { Specialty } from '../../model/specialty.vo';
 import { Project } from '../../model/project.entity';
+import { ProjectTeamMember } from '../../model/project-team-member.entity';
 
 interface TeamMemberDisplay {
   id: string;
   name: string;
-  role: ProjectRole;
+  role: ProjectRole | string;
   specialty: string;
   email: string;
   status: string;
@@ -106,18 +108,28 @@ export class TeamComponent implements OnInit, OnDestroy {
   projectId: string = '';
   orgId: string = '';
 
+  // Estados para agregar miembro por email
+  searchEmail: string = '';
+  foundUser: { id: number; fullName?: string; email?: string } | null = null;
+  searchLoading = false;
+  searchError: string | null = null;
+  addRole: ProjectRole | null = null;
+  addSpecialty: Specialty | null = null;
+  addLoading = false;
+
   private subscriptions: Subscription[] = [];
 
   constructor(
     private fb: FormBuilder,
-    private teamMemberService: ProjectTeamMemberService,
     private orgMemberService: OrganizationMemberService,
     private personService: PersonService,
     private sessionService: SessionService,
     private projectService: ProjectService,
+    private teamMemberService: ProjectTeamMemberService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private http: HttpClient
   ) {
     this.memberForm = this.fb.group({
       members: this.fb.array([])
@@ -162,90 +174,149 @@ export class TeamComponent implements OnInit, OnDestroy {
   }
 
   loadTeamMembers(): void {
-    const teamSub = this.teamMemberService.getByProjectId({ projectId: this.projectId })
-      .pipe(
-        switchMap((members: ProjectTeamMember[]) => {
-          if (members.length === 0) {
-            this.teamMembers = [];
-            this.loading = false;
-            return [];
-          }
+    this.loading = true;
 
-          // Obtenemos todos los miembros de una sola vez para evitar peticiones individuales que pueden fallar
-          return this.personService.getAll().pipe(
-            map((allPersons: Person[]) => {
-              const personMap = new Map<number, Person>();
-              allPersons.forEach(person => {
-                if (person && person.id !== undefined) {
-                  personMap.set(person.id, person);
-                }
-              });
-
-              return members.map((member: ProjectTeamMember) => {
-                // Buscar la persona en nuestro mapa de personas
-                const personId = typeof member.personId === 'object' ? String(member.personId) : member.personId;
-                const person = personMap.get(Number(personId));
-
-                // Si no encontramos la persona, creamos una representación genérica
-                const firstName = person?.firstName || 'Unknown';
-                const lastName = person?.lastName || 'User';
-                const email = person?.email
-
-                return {
-                  id: member.id.toString(),
-                  name: `${firstName} ${lastName}`,
-                  role: member.role,
-                  specialty: member.specialty,
-                  email: email,
-                  status: 'ACTIVE' // Asumimos estado activo, esto puede cambiar según tu modelo
-                };
-              });
-            })
-          );
-        })
-      )
-      .subscribe({
-        next: (displayMembers: TeamMemberDisplay[]) => {
-          this.teamMembers = displayMembers;
-          this.loading = false;
-        },
-        error: (error: any) => {
-          console.error('Error loading team members:', error);
+    const teamSub = this.projectService.getMembersByProject({}, { id: this.projectId }).subscribe({
+      next: (members: any[]) => {
+        const displayMembers: TeamMemberDisplay[] = (members || []).map((m: any) => {
+          const nameFromParts = `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim();
+          const fullName = (m.fullName ?? nameFromParts) || 'Sin nombre';
+          return {
+            id: (m.memberId ?? m.id ?? '').toString(),
+            name: fullName,
+            role: m.role ?? 'N/A',
+            specialty: m.specialty ?? 'N/A',
+            email: m.email ?? 'Sin email',
+            status: 'ACTIVE'
+          };
+        });
+        this.teamMembers = displayMembers;
+        this.loading = false;
+      },
+      error: (error: any) => {
+        console.error('Error loading team members:', error);
+        if (error.status === 401 || error.status === 403) {
+          this.error = 'No autorizado para ver los miembros del proyecto';
+        } else if (error.status === 400) {
+          this.error = 'Proyecto inválido o inexistente';
+        } else {
           this.error = this.translate.instant('team.errors.load-members');
-          this.loading = false;
         }
-      });
+        this.loading = false;
+      }
+    });
 
     this.subscriptions.push(teamSub);
   }
 
   openAddMembersDialog(): void {
-    this.loading = true;
-
-    // Resetear formulario y búsqueda
-    this.searchQuery = '';
-    this.memberForm = this.fb.group({
-      members: this.fb.array([])
+    this.resetAddMemberState();
+    this.dialog.open(this.addMembersDialog, {
+      width: '500px',
+      maxHeight: '90vh'
     });
+  }
 
-    // Cargar miembros de la organización que no están en el proyecto
-    this.loadOrganizationMembers()
-      .then(() => {
-        this.loading = false;
-        this.dialog.open(this.addMembersDialog, {
-          width: '800px',
-          maxHeight: '90vh'
-        });
-      })
-      .catch(error => {
-        console.error('Error preparing dialog:', error);
-        this.loading = false;
+  private resetAddMemberState(): void {
+    this.searchEmail = '';
+    this.foundUser = null;
+    this.searchLoading = false;
+    this.searchError = null;
+    this.addRole = null;
+    this.addSpecialty = null;
+    this.addLoading = false;
+  }
+
+  searchUserByEmail(): void {
+    const email = this.searchEmail.trim();
+    if (!email) {
+      this.searchError = 'Ingrese un correo';
+      return;
+    }
+    this.searchLoading = true;
+    this.searchError = null;
+    this.foundUser = null;
+
+    const base = environment.propgmsApiBaseUrl.replace(/\/$/, '');
+    const url = `${base}/users/internal/email/${encodeURIComponent(email)}`;
+
+    this.http.get(url).subscribe({
+      next: (user: any) => {
+        this.foundUser = {
+          id: user.id,
+          fullName: user.fullName ?? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+          email: user.email
+        };
+        this.searchLoading = false;
+      },
+      error: (error: any) => {
+        if (error.status === 404) {
+          this.searchError = 'No existe un usuario con ese email';
+        } else {
+          this.searchError = 'No se pudo buscar el usuario';
+        }
+        this.searchLoading = false;
+      }
+    });
+  }
+
+  submitAddMember(): void {
+    if (!this.foundUser) {
+      this.searchError = 'Debes buscar y seleccionar un usuario';
+      return;
+    }
+    if (!this.addRole) {
+      this.searchError = 'Selecciona un rol';
+      return;
+    }
+
+    // Evitar duplicados
+    const alreadyInTeam = this.teamMembers.some(m => m.id === this.foundUser!.id.toString() || m.email === this.foundUser!.email);
+    if (alreadyInTeam) {
+      this.searchError = 'Este usuario ya es miembro del proyecto';
+      return;
+    }
+
+    // Validar specialty según rol
+    let specialtyToSend: Specialty = Specialty.NON_APPLICABLE;
+    if (this.addRole === ProjectRole.SPECIALIST) {
+      if (!this.addSpecialty || this.addSpecialty === Specialty.NON_APPLICABLE) {
+        this.searchError = 'Selecciona una especialidad para el especialista';
+        return;
+      }
+      specialtyToSend = this.addSpecialty;
+    }
+
+    this.addLoading = true;
+    this.searchError = null;
+
+    this.projectService.addProjectMember(this.projectId, {
+      userId: this.foundUser.id,
+      role: this.addRole,
+      specialty: specialtyToSend
+    }).subscribe({
+      next: () => {
+        this.addLoading = false;
         this.snackBar.open(
-          this.translate.instant('team.errors.load-org-members'),
+          this.translate.instant('team.success.members-added'),
           this.translate.instant('team.actions.close'),
-          { duration: 5000 }
+          { duration: 3000 }
         );
-      });
+        this.dialog.closeAll();
+        this.loadTeamMembers();
+      },
+      error: (error: any) => {
+        console.error('Error agregando miembro al proyecto:', error);
+        if (error.status === 400) {
+          this.searchError = error.error?.message || 'Solicitud inválida (verifica rol/especialidad o pertenencia a la organización)';
+        } else if (error.status === 401 || error.status === 403) {
+          this.searchError = 'No autorizado para agregar miembros';
+        } else {
+          this.searchError = 'No se pudo agregar el miembro';
+        }
+        this.addLoading = false;
+      }
+    });
   }
 
   async loadOrganizationMembers(): Promise<void> {
@@ -555,68 +626,46 @@ export class TeamComponent implements OnInit, OnDestroy {
   }
 
   submitRemoveMember(): void {
-    if (!this.selectedMember) {
+    if (!this.selectedMember || !this.projectId) {
       return;
     }
 
     this.loading = true;
-
-    // Obtener el ID del miembro seleccionado y ejecutar un GET primero para obtener el objeto completo
     const memberId = this.selectedMember.id;
 
-    // Crear un objeto ProjectTeamMemberId para el ID
-    // import { ProjectTeamMemberId } from '../../../shared/model/project-team-member-id.vo';
-    // const idObject = new ProjectTeamMemberId(memberId);
+    this.projectService.deleteProjectMember(this.projectId, memberId).subscribe({
+      next: () => {
+        this.dialog.closeAll();
+        this.loading = false;
 
-    // Primero hacemos un getById para obtener el objeto completo
-    this.teamMemberService.getById(null, { id: memberId })
-      .subscribe({
-        next: (memberData: ProjectTeamMember) => {
+        this.snackBar.open(
+          this.translate.instant('team.success.member-removed'),
+          this.translate.instant('team.actions.close'),
+          { duration: 3000 }
+        );
 
-          // Ahora que tenemos el objeto completo, procedemos a eliminarlo
-          this.teamMemberService.delete(null, { id: memberData.id.toString() })
-            .subscribe({
-              next: (response: any) => {
-                this.dialog.closeAll();
-                this.loading = false;
+        // Recargar los miembros del equipo
+        this.loadTeamMembers();
+      },
+      error: (error: any) => {
+        console.error('Error detallado al eliminar miembro del equipo:', error);
+        this.loading = false;
 
-                this.snackBar.open(
-                  this.translate.instant('team.success.member-removed'),
-                  this.translate.instant('team.actions.close'),
-                  { duration: 3000 }
-                );
-
-                // Recargar los miembros del equipo
-                this.loadTeamMembers();
-              },
-              error: (error: any) => {
-                console.error('Error detallado al eliminar miembro del equipo:', error);
-                if (error.status) {
-                  console.error('Estado HTTP:', error.status);
-                }
-                if (error.error) {
-                  console.error('Error del servidor:', error.error);
-                }
-                this.loading = false;
-
-                this.snackBar.open(
-                  this.translate.instant('team.errors.remove-member'),
-                  this.translate.instant('team.actions.close'),
-                  { duration: 5000 }
-                );
-              }
-            });
-        },
-        error: (error: any) => {
-          console.error('Error al obtener el miembro del equipo para eliminarlo:', error);
-          this.loading = false;
-
-          this.snackBar.open(
-            this.translate.instant('team.errors.remove-member'),
-            this.translate.instant('team.actions.close'),
-            { duration: 5000 }
-          );
+        if (error.status === 400) {
+          this.error = 'Proyecto o miembro inválido';
+        } else if (error.status === 401 || error.status === 403) {
+          this.error = 'No autorizado para eliminar miembros';
+        } else {
+          this.error = this.translate.instant('team.errors.remove-member');
         }
-      });
+
+        const msg = this.error ?? this.translate.instant('team.errors.remove-member');
+        this.snackBar.open(
+          msg,
+          this.translate.instant('team.actions.close'),
+          { duration: 5000 }
+        );
+      }
+    });
   }
 }

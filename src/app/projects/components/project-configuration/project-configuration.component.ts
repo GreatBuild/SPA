@@ -12,13 +12,12 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Project } from '../../model/project.entity';
-import { ProjectService } from '../../services/project.service';
+import { ProjectService, UpdateProjectRequest } from '../../services/project.service';
 import { SessionService } from '../../../iam/services/session.service';
 import { ProjectStatus } from '../../model/project-status.vo';
-import { environment } from '../../../../environments/environment';
+import { UserAccountService } from '../../../iam/services/user-account.service';
 
 @Component({
   selector: 'app-project-configuration',
@@ -48,6 +47,7 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
   projectStatuses = Object.values(ProjectStatus);
   loading = true;
   error: string | null = null;
+  contractingEntityEmail = '';
   private routeSubscription: Subscription | null = null;
 
   constructor(
@@ -57,15 +57,16 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private snackBar: MatSnackBar,
-    private http: HttpClient,
     private dialog: MatDialog,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private userAccountService: UserAccountService
   ) {
     this.projectForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: [''],
       status: ['', Validators.required],
-      endingDate: [new Date(), Validators.required]
+      endingDate: [new Date(), Validators.required],
+      contractingEntityEmail: ['', Validators.email]
     });
   }
 
@@ -97,6 +98,11 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
     this.projectService.getById(null, { id: projectId }).subscribe({
       next: (project: Project) => {
         this.project = project;
+        this.contractingEntityEmail = (project as any).contractingEntityEmail ?? (project as any)?.contractingEntity?.email ?? '';
+        const contractorId = (project as any).contractingEntityId ?? (project as any)?.contractingEntity?.id;
+        if (!this.contractingEntityEmail && contractorId) {
+          this.fetchContractingEntityEmailFromUserId(contractorId);
+        }
         this.updateForm(project);
         this.loading = false;
       },
@@ -113,11 +119,17 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
 
     if (projectId) {
       this.projectService.getById(null, { id: projectId }).subscribe({
-        next: (project: Project) => {
-          this.project = project;
-          this.updateForm(project);
-          this.loading = false;
-        },
+      next: (project: Project) => {
+        this.project = project;
+        // Si el modelo trae email del contratante, guardarlo para mostrarlo/editarlo
+        this.contractingEntityEmail = (project as any).contractingEntityEmail ?? (project as any)?.contractingEntity?.email ?? '';
+        const contractorId = (project as any).contractingEntityId ?? (project as any)?.contractingEntity?.id;
+        if (!this.contractingEntityEmail && contractorId) {
+          this.fetchContractingEntityEmailFromUserId(contractorId);
+        }
+        this.updateForm(project);
+        this.loading = false;
+      },
         error: (error: Error) => {
           console.error('Error loading project:', error);
           this.loading = false;
@@ -132,11 +144,34 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
   }
 
   updateForm(project: Project): void {
+    const name = (project as any).name ?? (project as any).projectName ?? '';
+    const description = (project as any).description ?? '';
+    const status = (project as any).status ?? '';
+    const endDateRaw = (project as any).endingDate ?? (project as any).endDate;
+    const endDate = endDateRaw ? new Date(endDateRaw) : new Date();
+
     this.projectForm.patchValue({
-      name: project.name,
-      description: project.description,
-      status: project.status,
-      endingDate: new Date(project.endingDate)
+      name,
+      description,
+      status,
+      endingDate: endDate,
+      contractingEntityEmail: this.contractingEntityEmail
+    });
+  }
+
+  private fetchContractingEntityEmailFromUserId(userId: number): void {
+    this.userAccountService.getUserInternalById(userId).subscribe({
+      next: (user: any) => {
+        if (!this.contractingEntityEmail && user?.email) {
+          this.contractingEntityEmail = user.email;
+          if (this.project) {
+            this.updateForm(this.project);
+          }
+        }
+      },
+      error: () => {
+        // Silencioso: si falla dejamos el campo sin modificar
+      }
     });
   }
 
@@ -148,34 +183,42 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
     if (this.projectForm.invalid || !this.project) {
       return;
     }
-     const formValues = this.projectForm.value;
+    const currentProject = this.project;
+    if (!currentProject) return;
+
+    const formValues = this.projectForm.value;
 
     // Usamos el ID directamente como número
-    const projectId = Number(this.project.id);
+    const projectId = Number(currentProject.id);
 
-    // Preparar los datos para actualizar como un objeto plano para JSON
-    const projectData = {
-      id: projectId, // Usamos el ID como número
-      name: formValues.name,
-      description: formValues.description || '',
-      status: formValues.status,
-      startingDate: this.project.startingDate,
-      endingDate: new Date(formValues.endingDate).toISOString(),
-      team: this.project.team || [],
-      organizationId: this.project.organizationId || null,
-      contractingEntityId: this.project.contractingEntity || null
-    };
+    const payload: UpdateProjectRequest = {};
+    if (formValues.name !== currentProject.name) {
+      payload.projectName = formValues.name;
+    }
+    if (formValues.description !== currentProject.description) {
+      payload.description = formValues.description || '';
+    }
+    if (formValues.endingDate) {
+      const newEnd = new Date(formValues.endingDate);
+      const currEnd = new Date(currentProject.endingDate);
+      if (newEnd.getTime() !== currEnd.getTime()) {
+        payload.endDate = newEnd.toISOString().slice(0, 10);
+      }
+    }
+    if (formValues.contractingEntityEmail && formValues.contractingEntityEmail !== this.contractingEntityEmail) {
+      payload.contractingEntityEmail = formValues.contractingEntityEmail;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      this.snackBar.open('No hay cambios para guardar', 'Cerrar', { duration: 3000 });
+      return;
+    }
 
     // Usar el servicio de proyectos para actualizar
     this.loading = true;
 
-    // Usar HttpClient directamente con la ruta correcta
-    // La ruta en el servidor es /projects/:id (sin /api/v1)
-    const url = `${environment.propgmsApiBaseUrl}/projects/${projectId}`;
-
-    const headers = new HttpHeaders().set('Content-Type', 'application/json');
-    this.http.put<Project>(url, projectData, { headers }).subscribe({
-      next: (updatedProject: Project) => {
+    this.projectService.updateProjectPartial(projectId, payload).subscribe({
+      next: (updatedProject: any) => {
         this.loading = false;
 
         this.snackBar.open('Proyecto actualizado correctamente', 'Cerrar', {
@@ -185,8 +228,23 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
         });
 
         // Actualizar el objeto local con los datos actualizados
-        this.project = updatedProject;
-        this.updateForm(updatedProject);
+        if (updatedProject && this.project) {
+          const baseProject = this.project as Project;
+          // Si el backend devuelve el recurso, mapear campos principales
+          this.project = {
+            ...baseProject,
+            name: updatedProject.projectName ?? updatedProject.name ?? baseProject.name,
+            description: updatedProject.description ?? baseProject.description,
+            status: updatedProject.status ?? baseProject.status,
+            endingDate: updatedProject.endDate ? new Date(updatedProject.endDate) : baseProject.endingDate
+          } as Project;
+          if (updatedProject.contractingEntityEmail) {
+            this.contractingEntityEmail = updatedProject.contractingEntityEmail;
+          }
+        }
+        if (this.project) {
+          this.updateForm(this.project);
+        }
       },
       error: (err: any) => {
         this.loading = false;

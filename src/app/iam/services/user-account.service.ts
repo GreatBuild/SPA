@@ -46,7 +46,7 @@ export class UserAccountService {
       ...(token && { 'Authorization': `Bearer ${token}` })
     });
 
-    return this.http.get(`${this.apiBaseUrl}users/internal/${id}`, { headers });
+    return this.http.get(`${this.apiBaseUrl}/users/internal/${id}`, { headers });
   }
 
   /**

@@ -608,7 +608,8 @@
       "TOPOGRAPHY": "Topography",
       "SANITATION": "Sanitation",
       "ELECTRICITY": "Electricity",
-      "COMMUNICATIONS": "Communications"
+      "COMMUNICATIONS": "Communications",
+      "NON_APPLICABLE": "Non-Applicable"
     },
 
     "actions": {

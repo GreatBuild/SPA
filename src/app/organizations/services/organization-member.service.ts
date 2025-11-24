@@ -56,7 +56,7 @@ export class OrganizationMemberService {
     });
 
     return this.http.get<OrganizationMemberResponse[]>(
-      `${this.apiBaseUrl}organizations/${organizationId}/members`,
+      `${this.apiBaseUrl}/organizations/${organizationId}/members`,
       { headers }
     );
   }
@@ -75,7 +75,7 @@ export class OrganizationMemberService {
     });
 
     return this.http.delete<void>(
-      `${this.apiBaseUrl}organizations/${organizationId}/members/${memberId}`,
+      `${this.apiBaseUrl}/organizations/${organizationId}/members/${memberId}`,
       { headers }
     );
   }

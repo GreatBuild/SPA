@@ -33,7 +33,7 @@ export class CreateProjectModalComponent {
   description = '';
   endDate = '';
   contractingEntityEmail = ''; // Cambiado de contractingEntityId a contractingEntityEmail
-  
+
   // Validaciones
   nameError = '';
   endDateError = '';
@@ -74,7 +74,7 @@ export class CreateProjectModalComponent {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const selectedDate = new Date(this.endDate);
-      
+
       if (selectedDate < today) {
         this.endDateError = 'La fecha de fin debe ser hoy o posterior';
         isValid = false;

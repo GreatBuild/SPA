@@ -1,51 +1,78 @@
 <div class="project-info-container">
-  <mat-card class="info-card" *ngIf="project">
-    <mat-card-title>{{ 'project-info.title' | translate }}</mat-card-title>
+  <ng-container *ngIf="loading; else content">
+    <div class="loading">{{ 'project-info.loading' | translate }}</div>
+  </ng-container>
 
-    <mat-card-content>
-      <div class="info-field">
-        <span class="label">{{ 'project-info.name' | translate }}</span>
-        <span class="value">{{ project.name }}</span>
-      </div>
+  <ng-template #content>
+    <mat-card class="info-card" *ngIf="project; else errorBlock">
+      <mat-card-title>{{ 'project-info.title' | translate }}</mat-card-title>
 
-      <div class="info-field" *ngIf="project.description">
-        <span class="label">{{ 'project-info.description' | translate }}</span>
-        <span class="value">{{ project.description }}</span>
-      </div>
+      <mat-card-content>
+        <div class="info-field">
+          <span class="label">{{ 'project-info.name' | translate }}</span>
+          <span class="value">{{ project.name }}</span>
+        </div>
 
-      <div class="info-field">
-        <span class="label">{{ 'project-info.status' | translate }}</span>
-        <span class="value">{{ getStatusTranslation(project.status) | translate }}</span>
-      </div>
+        <div class="info-field" *ngIf="project.description">
+          <span class="label">{{ 'project-info.description' | translate }}</span>
+          <span class="value">{{ project.description }}</span>
+        </div>
 
-      <div class="info-field">
-        <span class="label">{{ 'project-info.starting-date' | translate }}</span>
-        <span class="value">{{ project.startingDate | date }}</span>
-      </div>
+        <div class="info-field">
+          <span class="label">{{ 'project-info.status' | translate }}</span>
+          <span class="value">{{ getStatusTranslation(project.status) }}</span>
+        </div>
 
-      <div class="info-field">
-        <span class="label">{{ 'project-info.ending-date' | translate }}</span>
-        <span class="value">{{ project.endingDate | date }}</span>
-      </div>
+        <div class="info-field">
+          <span class="label">{{ 'project-info.starting-date' | translate }}</span>
+          <span class="value">{{ project.startingDate | date }}</span>
+        </div>
 
-      <!-- Entidad contratante -->
-      <div class="info-field" *ngIf="project.contractingEntity">
-        <span class="label">{{ 'project-info.contracting-entity' | translate }}</span>
-        <span class="value">{{ project.contractingEntity.fullName }}</span>
-      </div>
-      <div class="info-field" *ngIf="project.contractingEntity">
-        <span class="label">{{ 'project-info.email' | translate }}</span>
-        <span class="value">{{ project.contractingEntity.email }}</span>
-      </div>
-      <div class="info-field" *ngIf="project.contractingEntity?.phone">
-        <span class="label">{{ 'project-info.phone' | translate }}</span>
-        <span class="value">{{ project.contractingEntity?.phone?.value }}</span>
-      </div>
+        <div class="info-field">
+          <span class="label">{{ 'project-info.ending-date' | translate }}</span>
+          <span class="value">{{ project.endingDate | date }}</span>
+        </div>
 
-    </mat-card-content>
-  </mat-card>
+        <div class="info-field">
+          <span class="label">Organización</span>
+          <span class="value">{{ project.organizationName || ('ID: ' + project.organizationId) }}</span>
+        </div>
 
-  <div class="loading" *ngIf="!project">
-    {{ 'project-info.loading' | translate }}
-  </div>
+        <div class="info-field" *ngIf="project.contractingEntityId">
+          <span class="label">Contracting Entity</span>
+          <span class="value">{{ project.contractingEntityName || ('ID: ' + project.contractingEntityId) }}</span>
+        </div>
+
+        <div class="info-field" *ngIf="updateLoading">
+          <span class="label">Actualización</span>
+          <span class="value">Actualizando...</span>
+        </div>
+        <div class="info-field success" *ngIf="updateSuccess">
+          <span class="label">Actualización</span>
+          <span class="value">{{ updateSuccess }}</span>
+        </div>
+        <div class="info-field error" *ngIf="updateError">
+          <span class="label">Actualización</span>
+          <span class="value">{{ updateError }}</span>
+        </div>
+
+        <div class="info-field" *ngIf="statusLoading">
+          <span class="label">Estado</span>
+          <span class="value">Actualizando estado...</span>
+        </div>
+        <div class="info-field success" *ngIf="statusSuccess">
+          <span class="label">Estado</span>
+          <span class="value">{{ statusSuccess }}</span>
+        </div>
+        <div class="info-field error" *ngIf="statusError">
+          <span class="label">Estado</span>
+          <span class="value">{{ statusError }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </ng-template>
+
+  <ng-template #errorBlock>
+    <div class="error" *ngIf="error">{{ error }}</div>
+  </ng-template>
 </div>

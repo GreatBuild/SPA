@@ -90,7 +90,7 @@ export class OrganizationService {
     });
 
     return this.http.post<CreateOrganizationResponse>(
-      `${this.apiBaseUrl}organizations`,
+      `${this.apiBaseUrl}/organizations`,
       payload,
       { headers }
     );
@@ -108,7 +108,7 @@ export class OrganizationService {
     });
 
     return this.http.get<MyOrganizationResponse[]>(
-      `${this.apiBaseUrl}organizations/my-organizations`,
+      `${this.apiBaseUrl}/organizations/my-organizations`,
       { headers }
     );
   }
@@ -128,7 +128,7 @@ export class OrganizationService {
     });
 
     return this.http.put<UpdateOrganizationResponse>(
-      `${this.apiBaseUrl}organizations/${id}`,
+      `${this.apiBaseUrl}/organizations/${id}`,
       payload,
       { headers }
     );
@@ -147,7 +147,7 @@ export class OrganizationService {
     });
 
     return this.http.delete<void>(
-      `${this.apiBaseUrl}organizations/${id}`,
+      `${this.apiBaseUrl}/organizations/${id}`,
       { headers }
     );
   }

@@ -12,6 +12,8 @@ import { SessionService } from '../../../iam/services/session.service';
 import { ProjectService, CreateProjectRequest } from '../../services/project.service';
 import { CreateProjectModalComponent } from '../../components/create-project-modal/create-project-modal.component';
 import { OrganizationService } from '../../../organizations/services/organization.service';
+import { UserType } from '../../../iam/model/user-type.vo';
+
 
 @Component({
   selector: 'app-project-tab',
@@ -65,40 +67,23 @@ export class ProjectTabComponent implements OnInit {
     this.loading.set(true);
 
     this.projectService.getMyProjectsByOrganization({}, { orgId: organizationId }).subscribe({
-      next: (projects: Project[]) => {
-        console.log('[DEBUG] Proyectos recibidos del gateway:', projects);
-
-        // Adaptar campos del gateway (startDate/endDate/projectName/memberCount) a la vista
+      next: (projects: any[]) => {
         const mapped = (projects || []).map(p => ({
           ...p,
-          name: (p as any).projectName ?? (p as any).name ?? 'Proyecto',
-          startingDate: new Date((p as any).startDate ?? (p as any).startingDate),
-          endingDate: new Date((p as any).endDate ?? (p as any).endingDate),
-          // Si solo llega memberCount, crear arreglo “virtual” para que el badge use la longitud
-          team: Array.isArray((p as any).team) ? (p as any).team : new Array((p as any).memberCount ?? 0).fill(null),
-          currentUserRoleOnProject: (p as any).currentUserRoleOnProject // puede venir undefined, la card lo maneja
-        }));
-
-        this.projects.set(mapped as Project[]);
+          name: p.projectName ?? p.name ?? 'Proyecto',
+          startingDate: new Date(p.startDate ?? p.startingDate ?? Date.now()),
+          endingDate: new Date(p.endDate ?? p.endingDate ?? Date.now()),
+          team: Array.isArray(p.team) ? p.team : new Array(p.memberCount ?? 0).fill(null)
+        })) as unknown as Project[];
+        this.projects.set(mapped);
         this.loading.set(false);
       },
       error: (err: any) => {
-        console.error('[ERROR] Cargando proyectos por organización:', err);
-        let errorMessage = 'No se pudieron cargar los proyectos';
-
-        if (err.status === 401) {
-          errorMessage = 'No hay sesión válida. Inicia sesión nuevamente.';
-        } else if (err.status === 403) {
-          errorMessage = 'No tienes permisos para ver los proyectos de esta organización';
-        }
-
-        this.snackBar.open(`❌ ${errorMessage}`, 'Cerrar', {
-          duration: 4000,
-          panelClass: ['snackbar-error']
-        });
+        console.error('[ERROR] Cargando proyectos:', err);
         this.loading.set(false);
       }
     });
+
   }
 
   openCreateDialog(): void {
@@ -124,7 +109,6 @@ export class ProjectTabComponent implements OnInit {
         console.log('[DEBUG] Current org ID:', this.session.getOrganizationId());
         console.log('[DEBUG] Token exists:', !!this.session.getToken());
 
-        // Crear el payload con el email del contratante (el backend espera email, no ID)
         const createRequest: CreateProjectRequest = {
           projectName: result.projectName,
           description: result.description,
@@ -135,7 +119,6 @@ export class ProjectTabComponent implements OnInit {
 
         console.log('[DEBUG] Sending createProject request:', createRequest);
 
-        // Ahora crear el proyecto directamente con el email
         this.projectService.createProject(createRequest).subscribe({
           next: (response) => {
             console.log('✅ Project created successfully:', response);
@@ -143,7 +126,6 @@ export class ProjectTabComponent implements OnInit {
               duration: 4000,
               panelClass: ['snackbar-success']
             });
-            // Recargar la lista de proyectos
             this.loadProjectsForOrganization(this.organizationId!);
           },
           error: (err: any) => {
