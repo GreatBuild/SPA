@@ -109,7 +109,9 @@
     "statuses": {
       "BASIC_STUDIES": "Basic Studies",
       "DESIGN_IN_PROCESS": "Design in Process",
-      "REJECT": "Rejected",
+      "UNDER_REVIEW": "Under Review",
+      "CHANGE_REQUESTED": "Change Requested",
+      "CHANGE_PENDING": "Change Pending",
       "APPROVED": "Approved"
     }
   },

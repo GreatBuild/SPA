@@ -11,8 +11,8 @@
       </mat-form-field>
 
       <mat-form-field appearance="fill">
-        <mat-label>{{ 'change-management.form.description-label' | translate }}</mat-label>
-        <textarea matInput [(ngModel)]="changeRequest.description" name="description" required></textarea>
+        <mat-label>Justificación</mat-label>
+        <textarea matInput [(ngModel)]="changeRequest.justification" name="justification" required></textarea>
       </mat-form-field>
 
       <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!isFormValid() || loading">
@@ -46,30 +46,49 @@
 
     <mat-card *ngFor="let request of changeProcess()" class="request-card">
       <mat-card-header>
-        <mat-card-title>{{ request.justification }}</mat-card-title>
+        <mat-card-title>{{ request.title }}</mat-card-title>
         <mat-card-subtitle>
         <span [ngClass]="getStatusColor(request.status)">
           {{ 'change-management.status-label' | translate }}: {{ ('change-management.status.' + request.status) | translate }}
         </span>
         </mat-card-subtitle>
-      </mat-card-header>
+    </mat-card-header>
 
       <mat-card-content>
-        <p><strong>{{ 'change-management.description-label' | translate }}:</strong>
-          {{ request.description || ('change-management.no-description' | translate) }}
-        </p>
+        <p><strong>Justificación:</strong> {{ request.justification }}</p>
+        <p><strong>Origen:</strong> {{ request.origin }}</p>
         <p><strong>{{ 'change-management.project-label' | translate }}:</strong> {{ request.projectId }}</p>
         <p><strong>{{ 'change-management.check-date-label' | translate }}:</strong>
           {{ request.approvedAt ? (request.approvedAt | date:'medium') : ('change-management.pending' | translate) }}
         </p>
-      </mat-card-content>
+        <p *ngIf="request.response"><strong>Respuesta:</strong> {{ request.response }}</p>
+
+      <div *ngIf="request.status === 'PENDING'" class="response-block">
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Respuesta</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="responseState[request.id || 0].response"
+            placeholder="Escribe una respuesta"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="fill" class="full-width">
+          <mat-label>Estado</mat-label>
+          <mat-select
+            [(ngModel)]="responseState[request.id || 0].status">
+            <mat-option value="APPROVED">Aprobar</mat-option>
+            <mat-option value="REJECTED">Rechazar</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
 
       <mat-card-actions *ngIf="request.status === 'PENDING'">
-        <button mat-raised-button color="primary" (click)="approveChangeRequest(request)">
-          ✅ {{ 'change-management.approve-button' | translate }}
-        </button>
-        <button mat-raised-button color="warn" (click)="rejectChangeRequest(request)">
-          ❌ {{ 'change-management.reject-button' | translate }}
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="loading"
+          (click)="respondChangeRequest(request, responseState[request.id || 0].status)">
+          {{ 'change-management.form.submit-button' | translate }}
         </button>
       </mat-card-actions>
     </mat-card>

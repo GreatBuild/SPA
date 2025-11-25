@@ -198,6 +198,9 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
     if (formValues.description !== currentProject.description) {
       payload.description = formValues.description || '';
     }
+    if (formValues.status && formValues.status !== currentProject.status) {
+      payload.status = formValues.status;
+    }
     if (formValues.endingDate) {
       const newEnd = new Date(formValues.endingDate);
       const currEnd = new Date(currentProject.endingDate);
@@ -217,7 +220,7 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
     // Usar el servicio de proyectos para actualizar
     this.loading = true;
 
-    this.projectService.updateProjectPartial(projectId, payload).subscribe({
+    this.projectService.updateProject(projectId, payload).subscribe({
       next: (updatedProject: any) => {
         this.loading = false;
 
@@ -230,7 +233,6 @@ export class ProjectConfigurationComponent implements OnInit, OnDestroy {
         // Actualizar el objeto local con los datos actualizados
         if (updatedProject && this.project) {
           const baseProject = this.project as Project;
-          // Si el backend devuelve el recurso, mapear campos principales
           this.project = {
             ...baseProject,
             name: updatedProject.projectName ?? updatedProject.name ?? baseProject.name,

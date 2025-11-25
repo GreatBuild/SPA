@@ -28,20 +28,53 @@
           <span class="value">{{ project.startingDate | date }}</span>
         </div>
 
-        <div class="info-field">
-          <span class="label">{{ 'project-info.ending-date' | translate }}</span>
-          <span class="value">{{ project.endingDate | date }}</span>
-        </div>
+      <div class="info-field">
+        <span class="label">{{ 'project-info.ending-date' | translate }}</span>
+        <span class="value">{{ project.endingDate | date }}</span>
+      </div>
 
         <div class="info-field">
           <span class="label">Organización</span>
           <span class="value">{{ project.organizationName || ('ID: ' + project.organizationId) }}</span>
         </div>
 
-        <div class="info-field" *ngIf="project.contractingEntityId">
-          <span class="label">Contracting Entity</span>
-          <span class="value">{{ project.contractingEntityName || ('ID: ' + project.contractingEntityId) }}</span>
+      <div class="info-field" *ngIf="project.contractingEntityId">
+        <span class="label">Contracting Entity</span>
+        <span class="value">{{ project.contractingEntityName || ('ID: ' + project.contractingEntityId) }}</span>
+      </div>
+
+      <div *ngIf="editMode" class="edit-form">
+        <h3>Editar proyecto</h3>
+        <div class="info-field">
+          <span class="label">Nombre</span>
+          <input [(ngModel)]="formModel.projectName" />
         </div>
+        <div class="info-field">
+          <span class="label">Descripción</span>
+          <textarea [(ngModel)]="formModel.description"></textarea>
+        </div>
+        <div class="info-field">
+          <span class="label">Fecha de fin</span>
+          <input type="date" [(ngModel)]="formModel.endDate" />
+        </div>
+        <div class="info-field">
+          <span class="label">Email contratante</span>
+          <input type="email" [(ngModel)]="formModel.contractingEntityEmail" />
+        </div>
+        <div class="info-field">
+          <span class="label">Estado</span>
+          <select [(ngModel)]="formModel.status">
+            <option *ngFor="let st of [ 'BASIC_STUDIES','DESIGN_IN_PROCESS','UNDER_REVIEW','CHANGE_REQUESTED','CHANGE_PENDING','APPROVED' ]" [value]="st">
+              {{ getStatusTranslation(st) }}
+            </option>
+          </select>
+        </div>
+        <div *ngIf="saveError" class="error">{{ saveError }}</div>
+        <div class="actions">
+          <button mat-button (click)="cancelEdit()" [disabled]="saveLoading">Cancelar</button>
+          <button mat-raised-button color="primary" (click)="saveChanges()" [disabled]="saveLoading">Guardar</button>
+        </div>
+      </div>
 
         <div class="info-field" *ngIf="updateLoading">
           <span class="label">Actualización</span>

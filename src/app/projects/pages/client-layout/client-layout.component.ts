@@ -4,8 +4,6 @@ import {ProjectListComponent} from '../../components/project-list/project-list.c
 import {ProjectService} from '../../services/project.service';
 import {Project} from '../../model/project.entity';
 import {SessionService} from '../../../iam/services/session.service';
-import {ProjectTeamMemberService} from '../../services/project-team-member.service';
-import {ProjectTeamMember} from '../../model/project-team-member.entity';
 import {UserType} from '../../../iam/model/user-type.vo';
 
 @Component({
@@ -25,23 +23,22 @@ export class ClientLayoutComponent {
 
   constructor(
     private projectService: ProjectService,
-    private session: SessionService,
-    private projectTeamMemberService: ProjectTeamMemberService
+    private session: SessionService
   ) {
     this.loadProjects();
   }
 
   loadProjects() {
-    const personId = this.session.getPersonId();
-    /**
-    if (!personId) {
-      console.warn('No person ID found in session. Aborting project load.');
-      return;
-    }
-     */
-    this.projectService.getByClientId({},{clientId: personId}).subscribe({
-      next: (projects: Project[]) => {
-        this.projects.set(projects);
+    this.projectService.getByClientId().subscribe({
+      next: (projects: any[]) => {
+        const mapped = (projects || []).map(p => ({
+          ...p,
+          name: p.projectName ?? p.name ?? 'Proyecto',
+          startingDate: new Date(p.startDate ?? p.startingDate ?? Date.now()),
+          endingDate: new Date(p.endDate ?? p.endingDate ?? Date.now()),
+          team: Array.isArray(p.team) ? p.team : new Array(p.memberCount ?? 0).fill(null)
+        })) as unknown as Project[];
+        this.projects.set(mapped);
       },
       error: (error: any) => {
         console.error('Error loading projects:', error);

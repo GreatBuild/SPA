@@ -23,6 +23,7 @@ export interface UpdateProjectRequest {
   description?: string;
   endDate?: string; // YYYY-MM-DD
   contractingEntityEmail?: string;
+  status?: string;
 }
 
 export interface UpdateStatusRequest {
@@ -52,7 +53,7 @@ export class ProjectService {
   private readonly service = createDynamicService<Project>([
     createEndpointConfig({ name: 'getAll', method: HttpMethod.GET }, undefined, 'projects'),
     createEndpointConfig({ name: 'getById', method: HttpMethod.GET }, undefined, 'projects', '/:id'),
-    createEndpointConfig({ name: 'getByClientId', method: HttpMethod.GET }, undefined, 'projects', '?clientId=:clientId'),
+    createEndpointConfig({ name: 'getByClientId', method: HttpMethod.GET }, undefined, 'projects', '/as-client'),
     createEndpointConfig({ name: 'getMyProjectsByOrganization', method: HttpMethod.GET }, undefined, 'projects', '/organization/:orgId/my-projects'),
     createEndpointConfig({ name: 'getMembersByProject', method: HttpMethod.GET }, undefined, 'projects', '/:id/members'),
     createEndpointConfig({ name: 'addMember', method: HttpMethod.POST }, undefined, 'projects', '/:projectId/members'),
@@ -91,7 +92,7 @@ export class ProjectService {
     });
 
     return this.http.post<CreateProjectResponse>(
-      `${environment.propgmsApiBaseUrl}projects`,
+      `${environment.propgmsApiBaseUrl}/projects`,
       payload,
       { headers }
     );
@@ -101,6 +102,13 @@ export class ProjectService {
    * Actualiza parcialmente un proyecto. Envía solo los campos presentes en payload.
    */
   updateProjectPartial(id: number | string, payload: UpdateProjectRequest): Observable<Project> {
+    return this.updatePartial(payload, { id });
+  }
+
+  /**
+   * Actualiza un proyecto en el endpoint unificado PUT /projects/:id (envía solo campos modificados).
+   */
+  updateProject(id: number | string, payload: UpdateProjectRequest): Observable<Project> {
     return this.updatePartial(payload, { id });
   }
 

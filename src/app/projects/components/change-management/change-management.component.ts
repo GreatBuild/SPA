@@ -19,6 +19,9 @@ import {MatProgressSpinner} from '@angular/material/progress-spinner';
 import {ChangeOrigin} from '../../../changes/model/change-origin.vo';
 import {TranslatePipe} from '@ngx-translate/core';
 import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatSelectModule} from '@angular/material/select';
+
+type ChangeItem = ChangeProcess & { title?: string };
 
 @Component({
   selector: 'app-change-management',
@@ -38,21 +41,23 @@ import {MatSnackBar} from '@angular/material/snack-bar';
     NgClass,
     TranslatePipe,
     DatePipe,
-    MatCardModule
+    MatCardModule,
+    MatSelectModule
   ],
 })
-export class ChangeManagementComponent {
-  changeProcess = signal<ChangeProcess[]>([]);
+export class ChangeManagementComponent implements OnInit {
+  changeProcess = signal<ChangeItem[]>([]);
 
   pendingRequest = signal<ChangeProcess | null>(null);
   resolvedRequests = signal<ChangeProcess[]>([]);
 
-  changeRequest: any = {title: '', description: ''};
+  changeRequest: any = { title: '', justification: '' };
   changeRequests: ChangeProcess[] = [];
   loading = false;
   error: string | null = null;
   success = false;
   showForm = false;
+  responseState: Record<string | number, { response: string; status: 'APPROVED' | 'REJECTED' }> = {};
 
   projectId!: number;
   isClient = false;
@@ -93,28 +98,36 @@ export class ChangeManagementComponent {
       return;
     }
 
-    try {
-      this.loading = true;
+    this.loading = true;
+    this.error = null;
 
-      this.changeProcessService.getAll().subscribe({
-        next: (requests: ChangeProcess[]) => {
-
-          const myRequests = requests.filter(r =>
-            r.projectId?.toString() === projectId.toString()
-          );
-          this.changeProcess.set(myRequests);
-
-        },
-        error: (err: any) => {
-          console.error('Error al cargar cambios:', err);
+    this.changeProcessService.getChangeProcesses({}, { projectId }).subscribe({
+        next: (requests: ChangeItem[]) => {
+          this.changeProcess.set(requests);
+        // inicializar estado de respuesta para cada cambio pendiente
+        requests.forEach(req => {
+          if (!this.responseState[req.id as any]) {
+            this.responseState[req.id as any] = { response: '', status: 'APPROVED' };
+          }
+        });
+        this.loading = false;
+      },
+      error: (err: any) => {
+        console.error('Error al cargar cambios:', err);
+        if (err.status === 401) {
+          this.error = 'No autenticado para ver cambios.';
+        } else if (err.status === 403 || err.status === 400) {
+          this.error = 'No tienes permisos o el proyecto no existe.';
+        } else if (err.status === 404) {
+          this.error = 'Proyecto no encontrado.';
+        } else if (err.status === 503) {
+          this.error = 'Servicio no disponible. Intenta más tarde.';
+        } else {
           this.error = 'Error al cargar las solicitudes de cambio.';
         }
-      });
-    } catch (error) {
-      this.error = 'Error inesperado al cargar solicitudes de cambio.';
-    } finally {
-      this.loading = false;
-    }
+        this.loading = false;
+      }
+    });
   }
 
   startNewChangeRequest(): void {
@@ -144,8 +157,8 @@ export class ChangeManagementComponent {
         return;
       }
 
-      this.changeProcessService.getAll().subscribe({
-        next: (allChanges: ChangeProcess[]) => {
+      this.changeProcessService.getChangeProcesses({}, { projectId }).subscribe({
+        next: (allChanges: ChangeItem[]) => {
           const alreadyPending = allChanges.find(
             (c) => c.projectId === projectId && c.status === ChangeProcessStatus.PENDING
           );
@@ -158,28 +171,44 @@ export class ChangeManagementComponent {
 
           const newChangeProcess = {
             projectId,
-            origin: ChangeOrigin.CHANGE_REQUEST,
-            status: ChangeProcessStatus.PENDING,
-            justification: this.changeRequest.title,
-            description: this.changeRequest.description,
-            approvedAt: null,
-            approvedBy: null
+            title: this.changeRequest.title,
+            justification: this.changeRequest.justification
           };
 
-          this.changeProcessService.create(newChangeProcess).subscribe({
+          this.changeProcessService.createChangeProcess(newChangeProcess).subscribe({
             next: () => {
               this.success = true;
               this.resetForm();
               this.showForm = false;
               this.loadChangeRequests();
             },
-            error: () => {
-              this.error = 'Ocurrió un error al crear la solicitud de cambio.';
+            error: (err: any) => {
+              if (err.status === 401) {
+                this.error = 'No autenticado para crear cambios.';
+              } else if (err.status === 403 || err.status === 400) {
+                this.error = 'No tienes permisos o el proyecto no existe.';
+              } else if (err.status === 404) {
+                this.error = 'Proyecto no encontrado.';
+              } else if (err.status === 503) {
+                this.error = 'Servicio no disponible. Intenta más tarde.';
+              } else {
+                this.error = 'Ocurrió un error al crear la solicitud de cambio.';
+              }
             }
           });
         },
-        error: () => {
-          this.error = 'Error al verificar si ya existe una solicitud pendiente.';
+        error: (err: any) => {
+          if (err.status === 401) {
+            this.error = 'No autenticado.';
+          } else if (err.status === 403 || err.status === 400) {
+            this.error = 'No tienes permisos o el proyecto no existe.';
+          } else if (err.status === 404) {
+            this.error = 'Proyecto no encontrado.';
+          } else if (err.status === 503) {
+            this.error = 'Servicio no disponible. Intenta más tarde.';
+          } else {
+            this.error = 'Error al verificar si ya existe una solicitud pendiente.';
+          }
           this.loading = false;
         }
       });
@@ -189,15 +218,15 @@ export class ChangeManagementComponent {
     }
   }
 
-  private resetForm(): void {
-    this.changeRequest = { title: '', description: '' };
+ private resetForm(): void {
+    this.changeRequest = { title: '', justification: '' };
     this.error = null;
     this.success = false;
   }
 
   isFormValid(): boolean {
     return this.changeRequest.title.trim().length >= 3 &&
-      this.changeRequest.description.trim().length >= 10;
+      this.changeRequest.justification.trim().length >= 3;
   }
 
   private showSnackBar(message: string, type: 'success' | 'error' | 'info' | 'warn'): void {
@@ -207,55 +236,64 @@ export class ChangeManagementComponent {
     });
   }
 
-  async approveChangeRequest(request: ChangeProcess): Promise<void> {
-    try {
-      this.loading = true;
+  respondChangeRequest(request: ChangeProcess, quickStatus?: 'APPROVED' | 'REJECTED'): void {
+    const state = this.responseState[request.id as any] || { response: '', status: 'APPROVED' };
+    const statusToSend = quickStatus ?? state.status;
+    const responseText = state.response?.trim();
 
-      const updated = {
-        ...request,
-        status: ChangeProcessStatus.APPROVED,
-        approvedAt: new Date().toISOString(),
-        approvedBy: 'Contractor'
-      };
-
-      await this.changeProcessService.update(updated, { id: request.id }).toPromise();
-
-      await this.loadChangeRequests();
-
-
-      this.showSnackBar('Cambio aprobado y eliminado', 'success');
-      await this.loadChangeRequests();
-    } catch (error) {
-      console.error('Error al aprobar y eliminar cambio:', error);
-      this.showSnackBar('Error al aprobar solicitud', 'error');
-    } finally {
-      this.loading = false;
+    if (!responseText) {
+      this.showSnackBar('Debes ingresar una respuesta', 'warn');
+      return;
     }
+
+    if (!['APPROVED', 'REJECTED'].includes(statusToSend)) {
+      this.showSnackBar('Estado inválido', 'error');
+      return;
+    }
+
+    this.loading = true;
+    this.changeProcessService.respondChangeProcess(request.id as any, {
+      response: responseText,
+      status: statusToSend
+    }).subscribe({
+      next: () => {
+        this.showSnackBar('Respuesta registrada', statusToSend === 'APPROVED' ? 'success' : 'info');
+        this.loadChangeRequests();
+      },
+      error: (err: any) => {
+        console.error('Error al responder cambio:', err);
+        if (err.status === 400) {
+          this.error = 'No se puede responder (solo solicitudes PENDING o no eres coordinador)';
+        } else if (err.status === 401) {
+          this.error = 'No autenticado.';
+        } else if (err.status === 403) {
+          this.error = 'No autorizado para responder.';
+        } else if (err.status === 503) {
+          this.error = 'Servicio no disponible. Intenta más tarde.';
+        } else {
+          this.error = 'Error al responder la solicitud de cambio.';
+        }
+      },
+      complete: () => {
+        this.loading = false;
+      }
+    });
   }
 
-  async rejectChangeRequest(request: ChangeProcess): Promise<void> {
-    try {
-      this.loading = true;
-
-      const updated = {
-        ...request,
-        status: ChangeProcessStatus.REJECTED,
-        approvedAt: new Date().toISOString(),
-        approvedBy: 'Contractor'
-      };
-
-      console.log('Actualizando cambio con ID:', request.id);
-
-      await this.changeProcessService.update(updated, { id: request.id }).toPromise();
-      await this.loadChangeRequests();
-
-      this.showSnackBar('Cambio rechazado correctamente', 'info');
-    } catch (error) {
-      console.error('Error al rechazar cambio:', error);
-      this.showSnackBar('Error al rechazar solicitud', 'error');
-    } finally {
-      this.loading = false;
+  onResponseChange(id: number | undefined, value: string): void {
+    const key = id ?? 0;
+    if (!this.responseState[key]) {
+      this.responseState[key] = { response: '', status: 'APPROVED' };
     }
+    this.responseState[key].response = value;
+  }
+
+  onStatusChange(id: number | undefined, value: 'APPROVED' | 'REJECTED'): void {
+    const key = id ?? 0;
+    if (!this.responseState[key]) {
+      this.responseState[key] = { response: '', status: 'APPROVED' };
+    }
+    this.responseState[key].status = value;
   }
 
   getStatusColor(status: ChangeProcessStatus): string {

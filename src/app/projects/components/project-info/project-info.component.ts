@@ -9,6 +9,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { OrganizationService } from '../../../organizations/services/organization.service';
 import { UserAccountService } from '../../../iam/services/user-account.service';
+import { FormsModule } from '@angular/forms';
 
 interface ProjectView {
   id: number;
@@ -25,18 +26,9 @@ interface ProjectView {
   contractingEntityName?: string;
 }
 
-interface ProjectMemberView {
-  memberId?: number;
-  userId?: number;
-  fullName: string;
-  email: string;
-  role: string;
-  specialty?: string;
-}
-
 @Component({
   selector: 'app-project-info',
-  imports: [CommonModule, MatCardModule, TranslateModule],
+  imports: [CommonModule, MatCardModule, TranslateModule, FormsModule],
   standalone: true,
   templateUrl: './project-info.component.html',
   styleUrl: './project-info.component.css'
@@ -56,6 +48,23 @@ export class ProjectInfoComponent implements OnInit, OnDestroy {
   statusLoading = false;
   statusError: string | null = null;
   statusSuccess: string | null = null;
+
+  editMode = false;
+  saveLoading = false;
+  saveError: string | null = null;
+  formModel: {
+    projectName: string;
+    description: string;
+    endDate: string;
+    contractingEntityEmail: string;
+    status: string;
+  } = {
+    projectName: '',
+    description: '',
+    endDate: '',
+    contractingEntityEmail: '',
+    status: ''
+  };
 
   constructor(
     private projectService: ProjectService,
@@ -121,6 +130,8 @@ export class ProjectInfoComponent implements OnInit, OnDestroy {
         if (mapped.contractingEntityId) {
           this.fetchContractingEntityName(mapped.contractingEntityId);
         }
+
+        this.setFormModel(mapped);
       },
       error: (error: any) => {
         console.error('Error loading project:', error);
@@ -182,4 +193,84 @@ export class ProjectInfoComponent implements OnInit, OnDestroy {
     });
   }
 
+  startEdit(): void {
+    if (this.project) {
+      this.setFormModel(this.project);
+      this.editMode = true;
+      this.saveError = null;
+    }
+  }
+
+  cancelEdit(): void {
+    this.editMode = false;
+    this.saveError = null;
+  }
+
+  saveChanges(): void {
+    if (!this.project || !this.currentProjectId) return;
+    const payload: UpdateProjectRequest = {};
+
+    if (this.formModel.projectName && this.formModel.projectName !== this.project.name) {
+      payload.projectName = this.formModel.projectName;
+    }
+    if (this.formModel.description !== this.project.description) {
+      payload.description = this.formModel.description || '';
+    }
+    if (this.formModel.status && this.formModel.status !== this.project.status) {
+      payload.status = this.formModel.status as ProjectStatus;
+    }
+    if (this.formModel.endDate) {
+      const newEnd = new Date(this.formModel.endDate);
+      const currEnd = new Date(this.project.endingDate);
+      if (newEnd.getTime() !== currEnd.getTime()) {
+        payload.endDate = this.formModel.endDate;
+      }
+    }
+    if (this.formModel.contractingEntityEmail && this.formModel.contractingEntityEmail !== (this.project as any).contractingEntityEmail) {
+      payload.contractingEntityEmail = this.formModel.contractingEntityEmail;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      this.editMode = false;
+      return;
+    }
+
+    this.saveLoading = true;
+    this.saveError = null;
+
+    this.projectService.updateProject(this.currentProjectId, payload).subscribe({
+      next: (updated: any) => {
+        // refrescar proyecto local
+        this.project = {
+          ...this.project!,
+          name: updated.projectName ?? updated.name ?? this.project!.name,
+          description: updated.description ?? this.project!.description,
+          status: updated.status ?? this.project!.status,
+          endingDate: updated.endDate ? new Date(updated.endDate) : this.project!.endingDate
+        };
+        this.editMode = false;
+        this.saveLoading = false;
+      },
+      error: (err: any) => {
+        if (err.status === 400) {
+          this.saveError = 'Solicitud inválida o campos faltantes';
+        } else if (err.status === 401 || err.status === 403) {
+          this.saveError = 'No tienes permisos para actualizar este proyecto';
+        } else {
+          this.saveError = 'Error al actualizar el proyecto';
+        }
+        this.saveLoading = false;
+      }
+    });
+  }
+
+  private setFormModel(project: ProjectView): void {
+    this.formModel = {
+      projectName: project.name || '',
+      description: project.description || '',
+      endDate: project.endingDate ? project.endingDate.toISOString().slice(0, 10) : '',
+      contractingEntityEmail: (project as any).contractingEntityEmail || '',
+      status: project.status || ''
+    };
+  }
 }
