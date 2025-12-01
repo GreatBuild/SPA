@@ -1,0 +1,24 @@
+<svg width="260" height="180" viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo con borde -->
+  <rect x="5" y="5" width="250" height="170" rx="18" ry="18" fill="#ffffff" stroke="#0F2B50" stroke-width="8"/>
+
+  <!-- Texto Clear -->
+  <text x="130" y="75"
+        font-family="Verdana, Arial, sans-serif"
+        font-size="48"
+        font-weight="700"
+        fill="#0F2B50"
+        text-anchor="middle">
+    Clear
+  </text>
+
+  <!-- Texto Cost -->
+  <text x="130" y="135"
+        font-family="Verdana, Arial, sans-serif"
+        font-size="52"
+        font-weight="700"
+        fill="#D9A427"
+        text-anchor="middle">
+    Cost
+  </text>
+</svg>
